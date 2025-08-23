@@ -1,4 +1,4 @@
-// PM2 Configuration for Production
+// PM2 Configuration for Multiple Environments
 module.exports = {
   apps: [{
     name: 'taller-platform',
@@ -9,6 +9,14 @@ module.exports = {
     max_memory_restart: '512M',
     env: {
       NODE_ENV: 'development'
+    },
+    env_development: {
+      NODE_ENV: 'development',
+      PORT: 3000
+    },
+    env_staging: {
+      NODE_ENV: 'staging',
+      PORT: 3001
     },
     env_production: {
       NODE_ENV: 'production',
@@ -22,6 +30,10 @@ module.exports = {
     
     // Configuración de monitoreo
     min_uptime: '10s',
-    max_restarts: 10
+    max_restarts: 10,
+    
+    // Health check
+    health_check_grace_period: 3000,
+    health_check_interval: 30000
   }]
 };

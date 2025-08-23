@@ -112,6 +112,19 @@ function initDatabase() {
             FOREIGN KEY (user_id) REFERENCES usuarios(id)
         )`);
         
+        // Tabla de bitácora para registrar todas las actividades de una solicitud
+        db.run(`CREATE TABLE IF NOT EXISTS solicitudes_bitacora (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            solicitud_id INTEGER NOT NULL,
+            tipo_evento TEXT NOT NULL,
+            descripcion TEXT NOT NULL,
+            usuario_id INTEGER,
+            fecha_evento DATETIME DEFAULT CURRENT_TIMESTAMP,
+            datos_adicionales TEXT,
+            FOREIGN KEY (solicitud_id) REFERENCES solicitudes(id),
+            FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+        )`);
+        
         // Tabla principal de solicitudes con campos adicionales
         db.run(`CREATE TABLE IF NOT EXISTS solicitudes (
             id INTEGER PRIMARY KEY AUTOINCREMENT,

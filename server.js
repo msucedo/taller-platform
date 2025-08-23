@@ -120,12 +120,28 @@ app.get('/api/tracker/:code', (req, res) => {
         }
         if (!row) {
             res.status(404).json({ error: 'Código de seguimiento no encontrado' });
+            db.close();
             return;
         }
-        res.json(row);
+        
+        // Obtener bitácora de eventos
+        db.all(`SELECT b.*, u.nombre as usuario_nombre
+                FROM solicitudes_bitacora b
+                LEFT JOIN usuarios u ON b.usuario_id = u.id
+                WHERE b.solicitud_id = ?
+                ORDER BY b.fecha_evento ASC`, [row.id], (err, bitacora) => {
+            if (err) {
+                console.error('Error obteniendo bitácora:', err);
+                bitacora = [];
+            }
+            
+            res.json({
+                ...row,
+                bitacora: bitacora || []
+            });
+            db.close();
+        });
     });
-    
-    db.close();
 });
 
 // Portal del proveedor
@@ -607,6 +623,14 @@ app.post('/api/solicitudes/:id/asignar', requireAuth, requireAdmin, (req, res) =
                             return;
                         }
                         
+                        // Registrar en bitácora
+                        db.run('INSERT INTO solicitudes_bitacora (solicitud_id, tipo_evento, descripcion, usuario_id, datos_adicionales) VALUES (?, ?, ?, ?, ?)',
+                            [solicitudId, 'reasignacion', `Solicitud reasignada a ${empleado.nombre}`, req.user.id, JSON.stringify({ empleado_anterior: null, empleado_nuevo: empleado.nombre, notas: notas })], (err) => {
+                            if (err) {
+                                console.error('Error registrando en bitácora:', err);
+                            }
+                        });
+                        
                         res.json({ message: 'Solicitud reasignada correctamente', empleado: empleado.nombre });
                         db.close();
                     });
@@ -619,6 +643,14 @@ app.post('/api/solicitudes/:id/asignar', requireAuth, requireAdmin, (req, res) =
                             db.close();
                             return;
                         }
+                        
+                        // Registrar en bitácora
+                        db.run('INSERT INTO solicitudes_bitacora (solicitud_id, tipo_evento, descripcion, usuario_id, datos_adicionales) VALUES (?, ?, ?, ?, ?)',
+                            [solicitudId, 'asignacion', `Solicitud asignada a ${empleado.nombre}`, req.user.id, JSON.stringify({ empleado: empleado.nombre, notas: notas })], (err) => {
+                            if (err) {
+                                console.error('Error registrando en bitácora:', err);
+                            }
+                        });
                         
                         res.json({ message: 'Solicitud asignada correctamente', empleado: empleado.nombre });
                         db.close();

@@ -157,6 +157,18 @@
                                         <small>${formatDate(solicitud.fecha_solicitud)}</small>
                                     </div>
                                 </div>
+                                ${solicitud.bitacora && solicitud.bitacora.length > 0 ? 
+                                    solicitud.bitacora.map(evento => `
+                                    <div class="timeline-item completed">
+                                        <span class="timeline-icon">${getEventIcon(evento.tipo_evento)}</span>
+                                        <div class="timeline-content">
+                                            <strong>${evento.descripcion}</strong>
+                                            ${evento.usuario_nombre ? `<br><small>Por: ${evento.usuario_nombre}</small>` : ''}
+                                            <small>${formatDate(evento.fecha_evento)}</small>
+                                        </div>
+                                    </div>
+                                    `).join('') : ''
+                                }
                                 ${solicitud.estado !== 'pendiente' ? `
                                 <div class="timeline-item completed">
                                     <span class="timeline-icon">${estadoInfo.icon}</span>
@@ -179,6 +191,18 @@
         function formatDate(dateString) {
             const date = new Date(dateString);
             return date.toLocaleDateString('es-ES') + ' ' + date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+        }
+        
+        function getEventIcon(tipoEvento) {
+            const iconos = {
+                'asignacion': '👤',
+                'reasignacion': '🔄',
+                'actualizacion': '📝',
+                'comentario': '💬',
+                'completado': '✅',
+                'rechazado': '❌'
+            };
+            return iconos[tipoEvento] || '📋';
         }
         
         function showMessage(text, type) {

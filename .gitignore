@@ -4,11 +4,14 @@ node_modules/
 # Environment variables
 .env
 .env.production
+.env.staging
 .env.local
 .env.development
 
-# Database
-database/taller.db
+# Database files
+database/taller*.db
+database/*.sqlite
+database/*.db-journal
 
 # claude code
 .claude/

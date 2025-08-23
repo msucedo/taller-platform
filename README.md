@@ -133,6 +133,10 @@ node database/init.js
 sqlite3 database/taller.db "UPDATE usuarios SET activo = 1"
 ```
 
+## Notas, mejoras
+- en la pagina de rastreo, agregar a cada rastreo la evidencia cuando se asigna o reasigna una solicitud
+
+
 ## 📄 Licencia
 
 MIT License - ver [package.json](package.json) para detalles.
