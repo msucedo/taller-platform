@@ -626,7 +626,7 @@ app.post('/api/solicitudes/:id/asignar', requireAuth, requireAdmin, (req, res) =
                         // Registrar en bitácora
                         db.run('INSERT INTO solicitudes_bitacora (solicitud_id, tipo_evento, descripcion, usuario_id, datos_adicionales) VALUES (?, ?, ?, ?, ?)',
                             [solicitudId, 'reasignacion', `Solicitud reasignada a ${empleado.nombre}`, req.user.id, JSON.stringify({ empleado_anterior: null, empleado_nuevo: empleado.nombre, notas: notas })], (err) => {
-                            if (err) {
+                            if (err && process.env.NODE_ENV !== 'production') {
                                 console.error('Error registrando en bitácora:', err);
                             }
                         });
@@ -647,7 +647,7 @@ app.post('/api/solicitudes/:id/asignar', requireAuth, requireAdmin, (req, res) =
                         // Registrar en bitácora
                         db.run('INSERT INTO solicitudes_bitacora (solicitud_id, tipo_evento, descripcion, usuario_id, datos_adicionales) VALUES (?, ?, ?, ?, ?)',
                             [solicitudId, 'asignacion', `Solicitud asignada a ${empleado.nombre}`, req.user.id, JSON.stringify({ empleado: empleado.nombre, notas: notas })], (err) => {
-                            if (err) {
+                            if (err && process.env.NODE_ENV !== 'production') {
                                 console.error('Error registrando en bitácora:', err);
                             }
                         });

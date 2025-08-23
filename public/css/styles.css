@@ -1361,44 +1361,21 @@ footer a:hover {
     margin-bottom: 30px;
 }
 
-.credentials-help {
+.help-info {
     margin-top: 30px;
     padding-top: 20px;
     border-top: 1px solid #eee;
-    text-align: left;
-}
-
-.credentials-help h4 {
-    color: #2c3e50;
-    margin-bottom: 15px;
     text-align: center;
 }
 
-.default-credentials {
-    background: #f8f9fa;
-    padding: 15px;
-    border-radius: 6px;
-    border-left: 4px solid #3498db;
+.help-info h4 {
+    color: #2c3e50;
+    margin-bottom: 15px;
+}
+
+.help-info p {
+    color: #666;
     font-size: 14px;
-}
-
-.default-credentials p {
-    margin-bottom: 5px;
-}
-
-.default-credentials code {
-    background: #e9ecef;
-    padding: 2px 6px;
-    border-radius: 3px;
-    font-family: monospace;
-    font-size: 13px;
-}
-
-.default-credentials small {
-    color: #e67e22;
-    font-weight: bold;
-    display: block;
-    margin-top: 10px;
 }
 
 .other-access {

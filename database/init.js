@@ -38,7 +38,9 @@ function createAdminUser(db) {
     const adminPassword = hashPassword(process.env.ADMIN_PASSWORD || 'admin123');
     const adminName = process.env.ADMIN_NAME || 'Administrador';
     
-    console.log(`🔍 Intentando crear admin con email: ${adminEmail}`);
+    if (process.env.NODE_ENV !== 'production') {
+        console.log(`🔍 Intentando crear admin con email: ${adminEmail}`);
+    }
     
     db.get('SELECT id FROM usuarios WHERE email = ?', [adminEmail], (err, row) => {
         if (err) {
@@ -53,14 +55,14 @@ function createAdminUser(db) {
                    function(err) {
                        if (err) {
                            console.error('❌ Error al crear administrador:', err.message);
-                       } else {
+                       } else if (process.env.NODE_ENV !== 'production') {
                            console.log(`✅ Usuario administrador creado exitosamente: ${adminEmail}`);
                            console.log(`📧 Email: ${adminEmail}`);
                            console.log(`👤 Nombre: ${adminName}`);
                            console.log(`🔐 Password configurado: ${!!process.env.ADMIN_PASSWORD ? 'Desde ENV' : 'Por defecto'}`);
                        }
                    });
-        } else {
+        } else if (process.env.NODE_ENV !== 'production') {
             console.log(`ℹ️  Usuario administrador ya existe: ${adminEmail}`);
         }
     });
@@ -178,7 +180,9 @@ function initDatabase() {
         // Crear usuario administrador por defecto
         createAdminUser(db);
         
-        console.log('Base de datos inicializada correctamente');
+        if (process.env.NODE_ENV !== 'production') {
+            console.log('Base de datos inicializada correctamente');
+        }
     });
     
     db.close();

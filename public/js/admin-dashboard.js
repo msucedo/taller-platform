@@ -1,4 +1,3 @@
-console.log('admin-dashboard.js cargado');
 let solicitudes = [];
 let solicitudesFiltradas = [];
 let empleados = [];
@@ -159,7 +158,7 @@ function mostrarSolicitudes(solicitudesList) {
             </div>
             <div class="solicitud-actions">
                 <button onclick="editarSolicitud(${solicitud.id})" class="btn-edit">Editar</button>
-                <button onclick="console.log('Click detectado en botón asignar para solicitud ${solicitud.id}'); asignarSolicitud(${solicitud.id})" class="btn-assign">${solicitud.empleado_asignado ? 'Reasignar' : 'Asignar'}</button>
+                <button onclick="asignarSolicitud(${solicitud.id})" class="btn-assign">${solicitud.empleado_asignado ? 'Reasignar' : 'Asignar'}</button>
                 <button onclick="verDetalleTracker('${solicitud.tracker_code}')" class="btn-view">Ver Tracker</button>
             </div>
         </div>
@@ -246,30 +245,25 @@ async function guardarEdicion(e) {
 }
 
 async function asignarSolicitud(id) {
-    console.log('🎯 asignarSolicitud llamada con id:', id);
     const solicitud = solicitudes.find(s => s.id === id);
     if (!solicitud) {
         showMessage('Solicitud no encontrada', 'error');
         return;
     }
     
-    // Siempre cargar empleados frescos para asegurar datos actualizados
     try {
         await loadEmpleados();
-        console.log('✅ Empleados cargados, mostrando modal...');
         mostrarModalAsignacion(id, solicitud);
     } catch (error) {
-        console.error('❌ Error cargando empleados:', error);
+        console.error('Error cargando empleados:', error);
         showMessage('Error al cargar empleados', 'error');
     }
 }
 
 function mostrarModalAsignacion(id, solicitud) {
-    console.log('🔄 Preparando modal de asignación...');
     const empleadosActivos = empleados.filter(emp => emp.activo && emp.rol !== 'admin');
     
     if (empleadosActivos.length === 0) {
-        console.log('❌ No hay empleados activos disponibles');
         showMessage('No hay empleados disponibles para asignar', 'error');
         return;
     }
@@ -290,7 +284,6 @@ function mostrarModalAsignacion(id, solicitud) {
         ${optionsHTML}
     `;
 
-    console.log('🎪 Abriendo modal de asignación...');
     abrirModal('modalAsignarSolicitud');
 }
 
@@ -351,18 +344,16 @@ async function loadEmpleados() {
         
         if (response.ok) {
             empleados = await response.json();
-            console.log(`📋 ${empleados.length} empleados cargados`);
             if (currentTab === 'empleados') {
                 mostrarEmpleados();
             }
             return empleados;
         } else {
-            console.error('❌ Error en respuesta del servidor:', response.status);
             showMessage('Error al cargar empleados', 'error');
             return [];
         }
     } catch (error) {
-        console.error('❌ Error:', error);
+        console.error('Error:', error);
         showMessage('Error de conexión al cargar empleados', 'error');
         return [];
     }
@@ -503,9 +494,6 @@ function abrirModal(modalId) {
     const modal = document.getElementById(modalId);
     if (modal) {
         modal.classList.remove('hidden');
-        console.log(`✅ Modal ${modalId} abierto`);
-    } else {
-        console.error(`❌ Modal ${modalId} no encontrado`);
     }
 }
 
