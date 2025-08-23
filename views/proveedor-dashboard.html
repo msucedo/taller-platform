@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Dashboard - Portal Proveedor</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Portal Proveedor</h1>
+            <p id="welcomeMessage">Bienvenido</p>
+        </header>
+
+        <main>
+            <div class="proveedor-dashboard">
+                <div class="dashboard-header">
+                    <h2>📋 Mis Solicitudes</h2>
+                    <div class="dashboard-actions">
+                        <a href="/" class="btn-primary">+ Nueva Solicitud</a>
+                        <button onclick="cerrarSesion()" class="btn-secondary">Cerrar Sesión</button>
+                    </div>
+                </div>
+
+                <div class="estadisticas">
+                    <div class="stat-card">
+                        <span class="stat-number" id="totalSolicitudes">0</span>
+                        <span class="stat-label">Total Solicitudes</span>
+                    </div>
+                    <div class="stat-card pendiente">
+                        <span class="stat-number" id="pendientesCount">0</span>
+                        <span class="stat-label">Pendientes</span>
+                    </div>
+                    <div class="stat-card en_proceso">
+                        <span class="stat-number" id="procesoCount">0</span>
+                        <span class="stat-label">En Proceso</span>
+                    </div>
+                    <div class="stat-card completado">
+                        <span class="stat-number" id="completadoCount">0</span>
+                        <span class="stat-label">Completadas</span>
+                    </div>
+                </div>
+
+                <div class="filtros-proveedor">
+                    <select id="filtroEstado">
+                        <option value="">Todos los estados</option>
+                        <option value="pendiente">Pendiente</option>
+                        <option value="en_proceso">En Proceso</option>
+                        <option value="completado">Completado</option>
+                        <option value="rechazado">Rechazado</option>
+                    </select>
+                    <select id="filtroServicio">
+                        <option value="">Todos los servicios</option>
+                        <option value="repuestos">Repuestos</option>
+                        <option value="herramientas">Herramientas</option>
+                        <option value="pintura">Pintura</option>
+                        <option value="grua">Grúa/Remolque</option>
+                        <option value="mecanico">Mecánicos</option>
+                        <option value="otros">Otros</option>
+                    </select>
+                </div>
+
+                <div id="solicitudesContainer">
+                    <div class="loading">Cargando solicitudes...</div>
+                </div>
+            </div>
+
+            <div id="message" class="message hidden"></div>
+        </main>
+
+        <footer>
+            <p>
+                <a href="/">Crear Nueva Solicitud</a> | 
+                <a href="/tracker">Rastrear Solicitud</a> | 
+                <a href="/proveedor">Portal Proveedor</a>
+            </p>
+        </footer>
+    </div>
+
+    <script>
+        let solicitudes = [];
+        let solicitudesFiltradas = [];
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            verificarAutenticacion();
+            
+            const filtroEstado = document.getElementById('filtroEstado');
+            const filtroServicio = document.getElementById('filtroServicio');
+            
+            filtroEstado.addEventListener('change', filtrarSolicitudes);
+            filtroServicio.addEventListener('change', filtrarSolicitudes);
+        });
+        
+        function verificarAutenticacion() {
+            const proveedorData = sessionStorage.getItem('proveedorData');
+            
+            if (!proveedorData) {
+                window.location.href = '/proveedor';
+                return;
+            }
+            
+            const data = JSON.parse(proveedorData);
+            document.getElementById('welcomeMessage').textContent = `Bienvenido, ${data.nombre}`;
+            
+            solicitudes = data.solicitudes;
+            solicitudesFiltradas = solicitudes;
+            
+            mostrarEstadisticas();
+            mostrarSolicitudes(solicitudes);
+        }
+        
+        function mostrarEstadisticas() {
+            const total = solicitudes.length;
+            const pendientes = solicitudes.filter(s => s.estado === 'pendiente').length;
+            const proceso = solicitudes.filter(s => s.estado === 'en_proceso').length;
+            const completado = solicitudes.filter(s => s.estado === 'completado').length;
+            
+            document.getElementById('totalSolicitudes').textContent = total;
+            document.getElementById('pendientesCount').textContent = pendientes;
+            document.getElementById('procesoCount').textContent = proceso;
+            document.getElementById('completadoCount').textContent = completado;
+        }
+        
+        function mostrarSolicitudes(solicitudesList) {
+            const container = document.getElementById('solicitudesContainer');
+            
+            if (solicitudesList.length === 0) {
+                container.innerHTML = `
+                    <div class="no-data">
+                        <h3>No hay solicitudes</h3>
+                        <p>Aún no has enviado solicitudes al taller.</p>
+                        <a href="/" class="btn-primary">Crear Primera Solicitud</a>
+                    </div>
+                `;
+                return;
+            }
+            
+            const html = solicitudesList.map(solicitud => `
+                <div class="solicitud-card-proveedor ${solicitud.estado}">
+                    <div class="solicitud-header-proveedor">
+                        <div class="solicitud-info">
+                            <h3>${solicitud.tipo_servicio}</h3>
+                            <span class="tracker-code">📋 ${solicitud.tracker_code}</span>
+                        </div>
+                        <span class="estado-badge ${solicitud.estado}">
+                            ${getEstadoIcon(solicitud.estado)} ${solicitud.estado.replace('_', ' ').toUpperCase()}
+                        </span>
+                    </div>
+                    
+                    <div class="solicitud-body-proveedor">
+                        <div class="solicitud-meta">
+                            <span><strong>Urgencia:</strong> ${solicitud.urgencia}</span>
+                            <span><strong>Fecha:</strong> ${formatDate(solicitud.fecha_solicitud)}</span>
+                            ${solicitud.fecha_preferida ? `<span><strong>Fecha Preferida:</strong> ${formatDate(solicitud.fecha_preferida)}</span>` : ''}
+                        </div>
+                        
+                        <div class="descripcion">
+                            <strong>Descripción:</strong>
+                            <p>${solicitud.descripcion}</p>
+                        </div>
+                        
+                        ${solicitud.notas_taller ? `
+                        <div class="notas-taller">
+                            <strong>📝 Respuesta del Taller:</strong>
+                            <p>${solicitud.notas_taller}</p>
+                        </div>
+                        ` : ''}
+                    </div>
+                    
+                    <div class="solicitud-actions-proveedor">
+                        <button onclick="verDetalle('${solicitud.tracker_code}')" class="btn-detalle">
+                            Ver Detalle Completo
+                        </button>
+                        ${solicitud.estado === 'pendiente' ? `
+                        <small class="help-text">💡 Puedes hacer seguimiento con el código ${solicitud.tracker_code}</small>
+                        ` : ''}
+                    </div>
+                </div>
+            `).join('');
+            
+            container.innerHTML = html;
+        }
+        
+        function filtrarSolicitudes() {
+            const filtroEstado = document.getElementById('filtroEstado').value;
+            const filtroServicio = document.getElementById('filtroServicio').value;
+            
+            solicitudesFiltradas = solicitudes;
+            
+            if (filtroEstado) {
+                solicitudesFiltradas = solicitudesFiltradas.filter(s => s.estado === filtroEstado);
+            }
+            
+            if (filtroServicio) {
+                solicitudesFiltradas = solicitudesFiltradas.filter(s => s.tipo_servicio === filtroServicio);
+            }
+            
+            mostrarSolicitudes(solicitudesFiltradas);
+        }
+        
+        function getEstadoIcon(estado) {
+            const icons = {
+                'pendiente': '⏳',
+                'en_proceso': '🔧',
+                'completado': '✅',
+                'rechazado': '❌'
+            };
+            return icons[estado] || '📄';
+        }
+        
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('es-ES');
+        }
+        
+        function verDetalle(trackerCode) {
+            window.open(`/tracker?code=${trackerCode}`, '_blank');
+        }
+        
+        function cerrarSesion() {
+            sessionStorage.removeItem('proveedorData');
+            window.location.href = '/proveedor';
+        }
+        
+        // Auto-llenar código en tracker si viene de URL
+        window.addEventListener('load', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const code = urlParams.get('code');
+            if (code) {
+                verDetalle(code);
+            }
+        });
+    </script>
+</body>
+</html>

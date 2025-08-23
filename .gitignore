@@ -1,0 +1,56 @@
+# Dependencies
+node_modules/
+
+# Environment variables
+.env
+.env.production
+.env.local
+.env.development
+
+# Database
+database/taller.db
+database/
+*.db
+*.sqlite
+
+# claude code
+.claude/
+
+# Logs
+*.log
+npm-debug.log*
+logs/
+
+# Runtime files
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+
+# Dependency directories
+node_modules/
+jspm_packages/
+
+# Optional npm cache directory
+.npm
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db

@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rastrear Solicitud - Taller Mecánico</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Taller Mecánico</h1>
+            <p>Rastrear Estado de Solicitud</p>
+        </header>
+
+        <main>
+            <div class="tracker-container">
+                <div class="tracker-form">
+                    <h2>🔍 Consultar Estado de Solicitud</h2>
+                    <p>Ingrese su código de seguimiento para ver el estado actual de su solicitud.</p>
+                    
+                    <div class="form-group">
+                        <label for="trackerCode">Código de Seguimiento</label>
+                        <input type="text" id="trackerCode" placeholder="Ej: TM123ABC" maxlength="8" style="text-transform: uppercase;">
+                        <small>El código fue enviado a su email cuando realizó la solicitud</small>
+                    </div>
+                    
+                    <button onclick="buscarSolicitud()" class="btn-submit">Consultar Estado</button>
+                </div>
+
+                <div id="resultado" class="hidden"></div>
+            </div>
+
+            <div id="message" class="message hidden"></div>
+        </main>
+
+        <footer>
+            <p>
+                <a href="/">Crear Nueva Solicitud</a> | 
+                <a href="/proveedor">Portal Proveedor</a> | 
+                <a href="/dashboard">Dashboard (Propietario)</a>
+            </p>
+        </footer>
+    </div>
+
+    <script>
+        async function buscarSolicitud() {
+            const code = document.getElementById('trackerCode').value.trim().toUpperCase();
+            const messageDiv = document.getElementById('message');
+            const resultadoDiv = document.getElementById('resultado');
+            
+            if (!code) {
+                showMessage('Por favor ingrese un código de seguimiento', 'error');
+                return;
+            }
+            
+            if (code.length !== 8 || !code.startsWith('TM')) {
+                showMessage('El código debe tener el formato TM123ABC (8 caracteres)', 'error');
+                return;
+            }
+            
+            try {
+                showMessage('Consultando...', 'info');
+                
+                const response = await fetch(`/api/tracker/${code}`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    mostrarResultado(data);
+                    messageDiv.classList.add('hidden');
+                } else {
+                    showMessage(data.error || 'Error al consultar la solicitud', 'error');
+                    resultadoDiv.classList.add('hidden');
+                }
+            } catch (error) {
+                showMessage('Error de conexión. Intente nuevamente.', 'error');
+                resultadoDiv.classList.add('hidden');
+            }
+        }
+        
+        function mostrarResultado(solicitud) {
+            const resultadoDiv = document.getElementById('resultado');
+            
+            const estadoTexts = {
+                'pendiente': { text: 'Pendiente', class: 'pendiente', icon: '⏳' },
+                'en_proceso': { text: 'En Proceso', class: 'en_proceso', icon: '🔧' },
+                'completado': { text: 'Completado', class: 'completado', icon: '✅' },
+                'rechazado': { text: 'Rechazado', class: 'rechazado', icon: '❌' }
+            };
+            
+            const estadoInfo = estadoTexts[solicitud.estado] || { text: solicitud.estado, class: 'pendiente', icon: '📄' };
+            
+            const html = `
+                <div class="resultado-card">
+                    <div class="resultado-header">
+                        <h3>📋 Solicitud ${solicitud.tracker_code}</h3>
+                        <span class="estado-badge ${estadoInfo.class}">
+                            ${estadoInfo.icon} ${estadoInfo.text}
+                        </span>
+                    </div>
+                    
+                    <div class="resultado-body">
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <strong>Proveedor:</strong>
+                                <span>${solicitud.proveedor_nombre}</span>
+                            </div>
+                            <div class="info-item">
+                                <strong>Email:</strong>
+                                <span>${solicitud.proveedor_email}</span>
+                            </div>
+                            ${solicitud.empresa ? `
+                            <div class="info-item">
+                                <strong>Empresa:</strong>
+                                <span>${solicitud.empresa}</span>
+                            </div>
+                            ` : ''}
+                            <div class="info-item">
+                                <strong>Servicio:</strong>
+                                <span>${solicitud.tipo_servicio}</span>
+                            </div>
+                            <div class="info-item">
+                                <strong>Urgencia:</strong>
+                                <span>${solicitud.urgencia}</span>
+                            </div>
+                            <div class="info-item">
+                                <strong>Fecha Solicitud:</strong>
+                                <span>${formatDate(solicitud.fecha_solicitud)}</span>
+                            </div>
+                            ${solicitud.fecha_preferida ? `
+                            <div class="info-item">
+                                <strong>Fecha Preferida:</strong>
+                                <span>${formatDate(solicitud.fecha_preferida)}</span>
+                            </div>
+                            ` : ''}
+                        </div>
+                        
+                        <div class="descripcion-section">
+                            <strong>Descripción:</strong>
+                            <p>${solicitud.descripcion}</p>
+                        </div>
+                        
+                        ${solicitud.notas_taller ? `
+                        <div class="notas-section">
+                            <strong>📝 Notas del Taller:</strong>
+                            <p>${solicitud.notas_taller}</p>
+                        </div>
+                        ` : ''}
+                        
+                        <div class="timeline-section">
+                            <strong>📅 Cronología:</strong>
+                            <div class="timeline">
+                                <div class="timeline-item completed">
+                                    <span class="timeline-icon">📨</span>
+                                    <div class="timeline-content">
+                                        <strong>Solicitud Recibida</strong>
+                                        <small>${formatDate(solicitud.fecha_solicitud)}</small>
+                                    </div>
+                                </div>
+                                ${solicitud.estado !== 'pendiente' ? `
+                                <div class="timeline-item completed">
+                                    <span class="timeline-icon">${estadoInfo.icon}</span>
+                                    <div class="timeline-content">
+                                        <strong>Estado: ${estadoInfo.text}</strong>
+                                        <small>${formatDate(solicitud.fecha_actualizacion || solicitud.fecha_solicitud)}</small>
+                                    </div>
+                                </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            resultadoDiv.innerHTML = html;
+            resultadoDiv.classList.remove('hidden');
+        }
+        
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('es-ES') + ' ' + date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+        }
+        
+        function showMessage(text, type) {
+            const messageDiv = document.getElementById('message');
+            messageDiv.textContent = text;
+            messageDiv.className = `message ${type}`;
+            messageDiv.classList.remove('hidden');
+            
+            if (type === 'success' || type === 'info') {
+                setTimeout(() => {
+                    messageDiv.classList.add('hidden');
+                }, 3000);
+            }
+        }
+        
+        // Permitir buscar con Enter
+        document.getElementById('trackerCode').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                buscarSolicitud();
+            }
+        });
+        
+        // Auto-uppercase
+        document.getElementById('trackerCode').addEventListener('input', function(e) {
+            e.target.value = e.target.value.toUpperCase();
+        });
+        
+        // Auto-llenar código desde URL si existe
+        window.addEventListener('load', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const code = urlParams.get('code');
+            if (code) {
+                document.getElementById('trackerCode').value = code.toUpperCase();
+                buscarSolicitud();
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Taller Mecánico</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Dashboard - Taller Mecánico</h1>
+            <p>Gestión de Solicitudes de Proveedores</p>
+        </header>
+
+        <main>
+            <div class="dashboard-controls">
+                <div class="actions-group">
+                    <button onclick="loadSolicitudes()" class="btn-refresh">Actualizar</button>
+                    <div class="export-buttons">
+                        <button onclick="exportarPDF()" class="btn-export btn-pdf">📄 PDF</button>
+                        <button onclick="exportarExcel()" class="btn-export btn-excel">📊 Excel</button>
+                    </div>
+                </div>
+                <div class="search-container">
+                    <input type="text" id="buscadorSolicitudes" placeholder="Buscar por proveedor, descripción o email..." class="search-input">
+                    <button onclick="limpiarBusqueda()" class="btn-clear-search">Limpiar</button>
+                </div>
+                <div class="filter-controls">
+                    <select id="filtroEstado">
+                        <option value="">Todos los estados</option>
+                        <option value="pendiente">Pendiente</option>
+                        <option value="en_proceso">En Proceso</option>
+                        <option value="completado">Completado</option>
+                        <option value="rechazado">Rechazado</option>
+                    </select>
+                    <select id="filtroServicio">
+                        <option value="">Todos los servicios</option>
+                        <option value="repuestos">Repuestos</option>
+                        <option value="herramientas">Herramientas</option>
+                        <option value="pintura">Pintura</option>
+                        <option value="grua">Grúa/Remolque</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="solicitudesContainer">
+                <div class="loading">Cargando solicitudes...</div>
+            </div>
+        </main>
+
+        <footer>
+            <p><a href="/">Volver al formulario</a></p>
+        </footer>
+    </div>
+
+    <div id="modalEditarSolicitud" class="modal hidden">
+        <div class="modal-content">
+            <h3>Editar Solicitud</h3>
+            <form id="editarForm">
+                <input type="hidden" id="editarId">
+                
+                <div class="form-group">
+                    <label for="editarEstado">Estado</label>
+                    <select id="editarEstado" name="estado">
+                        <option value="pendiente">Pendiente</option>
+                        <option value="en_proceso">En Proceso</option>
+                        <option value="completado">Completado</option>
+                        <option value="rechazado">Rechazado</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="editarNotas">Notas del Taller</label>
+                    <textarea id="editarNotas" name="notas_taller" rows="3"></textarea>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn-submit">Guardar</button>
+                    <button type="button" onclick="cerrarModal()" class="btn-cancel">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="/js/dashboard.js"></script>
+</body>
+</html>

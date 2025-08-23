@@ -1,0 +1,2008 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    line-height: 1.6;
+    color: #333;
+    background-color: #f4f4f4;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+header {
+    text-align: center;
+    margin-bottom: 30px;
+    background: #2c3e50;
+    color: white;
+    padding: 20px;
+    border-radius: 8px;
+}
+
+header h1 {
+    font-size: 2.5em;
+    margin-bottom: 10px;
+}
+
+header p {
+    font-size: 1.2em;
+    opacity: 0.9;
+}
+
+main {
+    background: white;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.solicitud-form {
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.solicitud-form h2 {
+    text-align: center;
+    margin-bottom: 30px;
+    color: #2c3e50;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+    color: #555;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #ddd;
+    border-radius: 4px;
+    font-size: 16px;
+    transition: border-color 0.3s;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: #3498db;
+}
+
+.btn-submit {
+    width: 100%;
+    background: #27ae60;
+    color: white;
+    padding: 15px;
+    border: none;
+    border-radius: 4px;
+    font-size: 18px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.btn-submit:hover {
+    background: #219a52;
+}
+
+.message {
+    padding: 15px;
+    margin: 20px 0;
+    border-radius: 4px;
+    text-align: center;
+}
+
+.message.success {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.message.error {
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.message.info {
+    background: #d1ecf1;
+    color: #0c5460;
+    border: 1px solid #bee5eb;
+}
+
+.hidden {
+    display: none;
+}
+
+.dashboard-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.actions-group {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.export-buttons {
+    display: flex;
+    gap: 8px;
+}
+
+.btn-export {
+    padding: 8px 12px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.3s;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.btn-pdf {
+    background: #e74c3c;
+    color: white;
+}
+
+.btn-pdf:hover {
+    background: #c0392b;
+    transform: translateY(-1px);
+}
+
+.btn-excel {
+    background: #27ae60;
+    color: white;
+}
+
+.btn-excel:hover {
+    background: #219a52;
+    transform: translateY(-1px);
+}
+
+.search-container {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.search-input {
+    padding: 8px 12px;
+    border: 2px solid #ddd;
+    border-radius: 4px;
+    font-size: 16px;
+    min-width: 300px;
+    transition: border-color 0.3s;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: #3498db;
+}
+
+.btn-clear-search {
+    background: #95a5a6;
+    color: white;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.3s;
+}
+
+.btn-clear-search:hover {
+    background: #7f8c8d;
+}
+
+.btn-refresh {
+    background: #3498db;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.btn-refresh:hover {
+    background: #2980b9;
+}
+
+.filter-controls {
+    display: flex;
+    gap: 15px;
+}
+
+.filter-controls select {
+    padding: 8px;
+    border: 2px solid #ddd;
+    border-radius: 4px;
+}
+
+.solicitud-card {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    overflow: hidden;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.solicitud-card.pendiente {
+    border-left: 5px solid #f39c12;
+}
+
+.solicitud-card.en_proceso {
+    border-left: 5px solid #3498db;
+}
+
+.solicitud-card.completado {
+    border-left: 5px solid #27ae60;
+}
+
+.solicitud-card.rechazado {
+    border-left: 5px solid #e74c3c;
+}
+
+.solicitud-header {
+    background: #f8f9fa;
+    padding: 15px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.solicitud-header h3 {
+    margin: 0;
+    color: #2c3e50;
+}
+
+.estado-badge {
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.estado-badge.pendiente {
+    background: #f39c12;
+    color: white;
+}
+
+.estado-badge.en_proceso {
+    background: #3498db;
+    color: white;
+}
+
+.estado-badge.completado {
+    background: #27ae60;
+    color: white;
+}
+
+.estado-badge.rechazado {
+    background: #e74c3c;
+    color: white;
+}
+
+.solicitud-body {
+    padding: 20px;
+}
+
+.solicitud-body p {
+    margin-bottom: 10px;
+}
+
+.solicitud-actions {
+    padding: 15px 20px;
+    background: #f8f9fa;
+    text-align: right;
+}
+
+.btn-edit {
+    background: #e67e22;
+    color: white;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.btn-edit:hover {
+    background: #d35400;
+}
+
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal.hidden {
+    display: none !important;
+}
+
+.modal-content {
+    background: white;
+    padding: 30px;
+    border-radius: 8px;
+    max-width: 500px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.modal-content h3 {
+    margin-bottom: 20px;
+    color: #2c3e50;
+}
+
+.form-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 20px;
+}
+
+.btn-cancel {
+    background: #95a5a6;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.btn-cancel:hover {
+    background: #7f8c8d;
+}
+
+.solicitud-detalle {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 5px;
+    padding: 15px;
+    margin: 10px 0;
+}
+
+.solicitud-detalle p {
+    margin: 5px 0;
+    line-height: 1.4;
+}
+
+.loading, .error, .no-data {
+    text-align: center;
+    padding: 40px;
+    color: #666;
+    font-size: 18px;
+}
+
+.error {
+    color: #e74c3c;
+}
+
+footer {
+    text-align: center;
+    margin-top: 30px;
+    padding: 20px;
+}
+
+footer a {
+    color: #3498db;
+    text-decoration: none;
+    font-size: 16px;
+}
+
+footer a:hover {
+    text-decoration: underline;
+}
+
+/* Wizard Styles */
+.wizard-container {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.progress-indicator {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 40px;
+    padding: 0 20px;
+}
+
+.progress-indicator .step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+    position: relative;
+    opacity: 0.5;
+    transition: opacity 0.3s;
+}
+
+.progress-indicator .step.active {
+    opacity: 1;
+}
+
+.progress-indicator .step.completed {
+    opacity: 1;
+}
+
+.step-number {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #ddd;
+    color: #666;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    margin-bottom: 8px;
+    transition: all 0.3s;
+}
+
+.step.active .step-number {
+    background: #3498db;
+    color: white;
+}
+
+.step.completed .step-number {
+    background: #27ae60;
+    color: white;
+}
+
+.step-title {
+    font-size: 12px;
+    text-align: center;
+    max-width: 100px;
+}
+
+.progress-indicator .step:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    top: 20px;
+    left: 60%;
+    width: 80%;
+    height: 2px;
+    background: #ddd;
+    z-index: -1;
+}
+
+.step-content {
+    display: none;
+    animation: fadeIn 0.3s ease-in;
+}
+
+.step-content.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateX(20px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+.step-content h3 {
+    color: #2c3e50;
+    margin-bottom: 10px;
+}
+
+.step-description {
+    color: #666;
+    margin-bottom: 30px;
+}
+
+/* Urgency Selector */
+.urgency-selector {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 15px;
+    margin-top: 10px;
+}
+
+.urgency-option {
+    cursor: pointer;
+}
+
+.urgency-option input[type="radio"] {
+    display: none;
+}
+
+.urgency-card {
+    display: block;
+    padding: 15px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    text-align: center;
+    transition: all 0.3s;
+    background: white;
+}
+
+.urgency-card:hover {
+    border-color: #3498db;
+    transform: translateY(-2px);
+}
+
+.urgency-option input[type="radio"]:checked + .urgency-card {
+    border-color: #3498db;
+    background: #f8f9fa;
+    box-shadow: 0 4px 8px rgba(52, 152, 219, 0.2);
+}
+
+.urgency-card.baja:hover,
+.urgency-option input[type="radio"]:checked + .urgency-card.baja {
+    border-color: #27ae60;
+    box-shadow: 0 4px 8px rgba(39, 174, 96, 0.2);
+}
+
+.urgency-card.media:hover,
+.urgency-option input[type="radio"]:checked + .urgency-card.media {
+    border-color: #f39c12;
+    box-shadow: 0 4px 8px rgba(243, 156, 18, 0.2);
+}
+
+.urgency-card.alta:hover,
+.urgency-option input[type="radio"]:checked + .urgency-card.alta {
+    border-color: #e67e22;
+    box-shadow: 0 4px 8px rgba(230, 126, 34, 0.2);
+}
+
+.urgency-card.critica:hover,
+.urgency-option input[type="radio"]:checked + .urgency-card.critica {
+    border-color: #e74c3c;
+    box-shadow: 0 4px 8px rgba(231, 76, 60, 0.2);
+}
+
+.urgency-card strong {
+    display: block;
+    font-size: 16px;
+    margin-bottom: 5px;
+}
+
+.urgency-card small {
+    color: #666;
+    font-size: 12px;
+}
+
+/* Summary Section */
+.summary-section {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+    margin-top: 30px;
+    border-left: 4px solid #3498db;
+}
+
+.summary-section h4 {
+    color: #2c3e50;
+    margin-bottom: 15px;
+}
+
+#summary-content {
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+#summary-content p {
+    margin-bottom: 8px;
+}
+
+#summary-content strong {
+    color: #2c3e50;
+}
+
+/* Wizard Navigation */
+.wizard-navigation {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 40px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+}
+
+.btn-primary {
+    background: #3498db;
+    color: white;
+    padding: 12px 24px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.3s;
+}
+
+.btn-primary:hover {
+    background: #2980b9;
+}
+
+.btn-secondary {
+    background: #95a5a6;
+    color: white;
+    padding: 12px 24px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.3s;
+}
+
+.btn-secondary:hover {
+    background: #7f8c8d;
+}
+
+@media (max-width: 768px) {
+    .container {
+        padding: 10px;
+    }
+    
+    .dashboard-controls {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .actions-group {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .export-buttons {
+        justify-content: center;
+    }
+    
+    .search-container {
+        flex-direction: column;
+    }
+    
+    .search-input {
+        min-width: auto;
+        width: 100%;
+    }
+    
+    .filter-controls {
+        flex-direction: column;
+    }
+    
+    .solicitud-header {
+        flex-direction: column;
+        gap: 10px;
+        align-items: flex-start;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+    
+    /* Wizard responsive */
+    .progress-indicator {
+        padding: 0 10px;
+    }
+    
+    .step-title {
+        font-size: 10px;
+        max-width: 80px;
+    }
+    
+    .step-number {
+        width: 30px;
+        height: 30px;
+        font-size: 12px;
+    }
+    
+    .urgency-selector {
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+    }
+    
+    .urgency-card {
+        padding: 10px;
+    }
+    
+    .wizard-navigation {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .btn-primary, .btn-secondary {
+        width: 100%;
+    }
+}
+
+/* Tracker Styles */
+.tracker-container {
+    max-width: 700px;
+    margin: 0 auto;
+}
+
+.tracker-form {
+    background: white;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    margin-bottom: 30px;
+    text-align: center;
+}
+
+.tracker-form h2 {
+    color: #2c3e50;
+    margin-bottom: 15px;
+}
+
+.tracker-form p {
+    color: #666;
+    margin-bottom: 30px;
+}
+
+.tracker-form small {
+    color: #999;
+    font-size: 12px;
+    margin-top: 5px;
+    display: block;
+}
+
+.resultado-card {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    overflow: hidden;
+    margin-bottom: 20px;
+}
+
+.resultado-header {
+    background: #f8f9fa;
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #eee;
+}
+
+.resultado-header h3 {
+    margin: 0;
+    color: #2c3e50;
+}
+
+.resultado-body {
+    padding: 25px;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
+.info-item {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.info-item strong {
+    color: #2c3e50;
+    font-size: 14px;
+}
+
+.info-item span {
+    color: #555;
+    font-size: 15px;
+}
+
+.descripcion-section, .notas-section {
+    margin-bottom: 25px;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 6px;
+    border-left: 4px solid #3498db;
+}
+
+.notas-section {
+    border-left-color: #e67e22;
+}
+
+.descripcion-section strong, .notas-section strong {
+    color: #2c3e50;
+    display: block;
+    margin-bottom: 10px;
+}
+
+.descripcion-section p, .notas-section p {
+    margin: 0;
+    color: #555;
+    line-height: 1.6;
+}
+
+.timeline-section {
+    margin-top: 25px;
+}
+
+.timeline-section strong {
+    color: #2c3e50;
+    display: block;
+    margin-bottom: 15px;
+}
+
+.timeline {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.timeline-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 6px;
+    border-left: 4px solid #ddd;
+    opacity: 0.6;
+}
+
+.timeline-item.completed {
+    opacity: 1;
+    border-left-color: #27ae60;
+}
+
+.timeline-icon {
+    font-size: 20px;
+    min-width: 30px;
+    text-align: center;
+}
+
+.timeline-content strong {
+    color: #2c3e50;
+    display: block;
+    margin-bottom: 3px;
+}
+
+.timeline-content small {
+    color: #666;
+    font-size: 12px;
+}
+
+/* Estados específicos para tracker */
+.estado-badge {
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.estado-badge.pendiente {
+    background: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeaa7;
+}
+
+.estado-badge.en_proceso {
+    background: #d1ecf1;
+    color: #0c5460;
+    border: 1px solid #bee5eb;
+}
+
+.estado-badge.completado {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.estado-badge.rechazado {
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+/* Responsive para tracker */
+@media (max-width: 768px) {
+    .tracker-form {
+        padding: 20px;
+    }
+    
+    .resultado-header {
+        flex-direction: column;
+        gap: 15px;
+        align-items: flex-start;
+    }
+    
+    .info-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+    
+    .timeline-item {
+        padding: 12px;
+    }
+    
+    .timeline-content {
+        min-width: 0;
+    }
+}
+
+/* Portal Proveedor Styles */
+.login-container {
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+.login-form {
+    background: white;
+    padding: 40px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    text-align: center;
+}
+
+.login-form h2 {
+    color: #2c3e50;
+    margin-bottom: 15px;
+}
+
+.login-form p {
+    color: #666;
+    margin-bottom: 30px;
+}
+
+.help-section {
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+    text-align: left;
+}
+
+.help-section h4 {
+    color: #2c3e50;
+    margin-bottom: 15px;
+}
+
+.help-section ul {
+    list-style: none;
+    padding: 0;
+}
+
+.help-section li {
+    margin-bottom: 8px;
+    color: #666;
+    font-size: 14px;
+}
+
+.help-section li:before {
+    content: "💡 ";
+    margin-right: 5px;
+}
+
+.help-section a {
+    color: #3498db;
+    text-decoration: none;
+}
+
+.help-section a:hover {
+    text-decoration: underline;
+}
+
+/* Dashboard Proveedor */
+.proveedor-dashboard {
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.dashboard-header h2 {
+    color: #2c3e50;
+    margin: 0;
+}
+
+.dashboard-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.estadisticas {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.stat-card {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    text-align: center;
+    border-left: 4px solid #3498db;
+}
+
+.stat-card.pendiente {
+    border-left-color: #f39c12;
+}
+
+.stat-card.en_proceso {
+    border-left-color: #3498db;
+}
+
+.stat-card.completado {
+    border-left-color: #27ae60;
+}
+
+.stat-number {
+    display: block;
+    font-size: 32px;
+    font-weight: bold;
+    color: #2c3e50;
+    margin-bottom: 8px;
+}
+
+.stat-label {
+    color: #666;
+    font-size: 14px;
+    text-transform: uppercase;
+}
+
+.filtros-proveedor {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 30px;
+    flex-wrap: wrap;
+}
+
+.filtros-proveedor select {
+    padding: 8px 12px;
+    border: 2px solid #ddd;
+    border-radius: 4px;
+    background: white;
+}
+
+.solicitud-card-proveedor {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+    overflow: hidden;
+    border-left: 4px solid #ddd;
+}
+
+.solicitud-card-proveedor.pendiente {
+    border-left-color: #f39c12;
+}
+
+.solicitud-card-proveedor.en_proceso {
+    border-left-color: #3498db;
+}
+
+.solicitud-card-proveedor.completado {
+    border-left-color: #27ae60;
+}
+
+.solicitud-card-proveedor.rechazado {
+    border-left-color: #e74c3c;
+}
+
+.solicitud-header-proveedor {
+    background: #f8f9fa;
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.solicitud-info h3 {
+    margin: 0 0 5px 0;
+    color: #2c3e50;
+}
+
+.tracker-code {
+    font-size: 12px;
+    color: #666;
+    background: #e9ecef;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-family: monospace;
+}
+
+.solicitud-body-proveedor {
+    padding: 20px;
+}
+
+.solicitud-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    margin-bottom: 15px;
+    font-size: 14px;
+}
+
+.solicitud-meta span {
+    color: #666;
+}
+
+.descripcion {
+    margin-bottom: 15px;
+}
+
+.descripcion strong {
+    color: #2c3e50;
+    display: block;
+    margin-bottom: 8px;
+}
+
+.descripcion p {
+    color: #555;
+    margin: 0;
+    line-height: 1.6;
+}
+
+.notas-taller {
+    background: #fff3cd;
+    padding: 15px;
+    border-radius: 6px;
+    border-left: 4px solid #ffc107;
+    margin-bottom: 15px;
+}
+
+.notas-taller strong {
+    color: #856404;
+    display: block;
+    margin-bottom: 8px;
+}
+
+.notas-taller p {
+    color: #856404;
+    margin: 0;
+    line-height: 1.6;
+}
+
+.solicitud-actions-proveedor {
+    padding: 15px 20px;
+    background: #f8f9fa;
+    border-top: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.btn-detalle {
+    background: #3498db;
+    color: white;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.btn-detalle:hover {
+    background: #2980b9;
+}
+
+.help-text {
+    color: #666;
+    font-size: 12px;
+    font-style: italic;
+}
+
+.no-data {
+    text-align: center;
+    padding: 60px 20px;
+    color: #666;
+}
+
+.no-data h3 {
+    color: #2c3e50;
+    margin-bottom: 10px;
+}
+
+.no-data p {
+    margin-bottom: 20px;
+}
+
+/* Responsive para portal proveedor */
+@media (max-width: 768px) {
+    .login-form {
+        padding: 25px;
+    }
+    
+    .dashboard-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .dashboard-actions {
+        justify-content: center;
+    }
+    
+    .estadisticas {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
+    }
+    
+    .filtros-proveedor {
+        flex-direction: column;
+    }
+    
+    .solicitud-header-proveedor {
+        flex-direction: column;
+        gap: 15px;
+        align-items: flex-start;
+    }
+    
+    .solicitud-meta {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .solicitud-actions-proveedor {
+        flex-direction: column;
+        gap: 10px;
+        align-items: stretch;
+    }
+    
+    .btn-detalle {
+        text-align: center;
+        width: 100%;
+    }
+}
+
+/* Login Empleados Styles */
+.empleado-login-form {
+    background: white;
+    padding: 40px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    text-align: center;
+}
+
+.empleado-login-form h2 {
+    color: #2c3e50;
+    margin-bottom: 15px;
+}
+
+.empleado-login-form p {
+    color: #666;
+    margin-bottom: 30px;
+}
+
+.credentials-help {
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+    text-align: left;
+}
+
+.credentials-help h4 {
+    color: #2c3e50;
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+.default-credentials {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 6px;
+    border-left: 4px solid #3498db;
+    font-size: 14px;
+}
+
+.default-credentials p {
+    margin-bottom: 5px;
+}
+
+.default-credentials code {
+    background: #e9ecef;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-family: monospace;
+    font-size: 13px;
+}
+
+.default-credentials small {
+    color: #e67e22;
+    font-weight: bold;
+    display: block;
+    margin-top: 10px;
+}
+
+.other-access {
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid #eee;
+    font-size: 14px;
+}
+
+.other-access p {
+    margin-bottom: 8px;
+    color: #666;
+}
+
+.other-access a {
+    color: #3498db;
+    text-decoration: none;
+}
+
+.other-access a:hover {
+    text-decoration: underline;
+}
+
+/* Responsive para login empleados */
+@media (max-width: 768px) {
+    .empleado-login-form {
+        padding: 25px;
+    }
+    
+    .default-credentials {
+        font-size: 13px;
+    }
+}
+
+/* Dashboard Admin/Empleado Styles */
+.admin-header, .empleado-header {
+    background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+    color: white;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 30px;
+}
+
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.header-info h1 {
+    margin: 0 0 8px 0;
+    font-size: 2em;
+}
+
+.header-info p {
+    margin: 0;
+    opacity: 0.9;
+    font-size: 1.1em;
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.user-badge {
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.user-badge.admin {
+    background: #f39c12;
+    color: white;
+}
+
+.user-badge.mecanico {
+    background: #27ae60;
+    color: white;
+}
+
+.user-badge.recepcionista {
+    background: #8e44ad;
+    color: white;
+}
+
+.btn-logout {
+    background: rgba(255,255,255,0.2);
+    color: white;
+    border: 2px solid rgba(255,255,255,0.3);
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.3s;
+}
+
+.btn-logout:hover {
+    background: rgba(255,255,255,0.3);
+    border-color: rgba(255,255,255,0.5);
+}
+
+/* Tabs */
+.admin-tabs, .empleado-tabs {
+    display: flex;
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 4px;
+    margin-bottom: 30px;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.tab-btn {
+    flex: 1;
+    min-width: 120px;
+    padding: 12px 16px;
+    background: transparent;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.3s;
+    color: #666;
+}
+
+.tab-btn:hover {
+    background: rgba(52, 152, 219, 0.1);
+    color: #3498db;
+}
+
+.tab-btn.active {
+    background: #3498db;
+    color: white;
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* Dashboard Section */
+.dashboard-section {
+    background: white;
+    border-radius: 8px;
+    padding: 30px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.section-header h2 {
+    margin: 0;
+    color: #2c3e50;
+}
+
+.section-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+/* Estadísticas */
+.admin-stats, .empleado-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.admin-stats .stat-card {
+    padding: 25px;
+}
+
+.admin-stats .stat-card.total {
+    border-left-color: #2c3e50;
+}
+
+.admin-stats .stat-card.rechazado {
+    border-left-color: #e74c3c;
+}
+
+/* Solicitud Cards para Admin */
+.solicitud-card {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+    overflow: hidden;
+    border-left: 4px solid #ddd;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.solicitud-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.solicitud-header {
+    background: #f8f9fa;
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #eee;
+}
+
+.solicitud-info {
+    flex: 1;
+}
+
+.solicitud-info h3 {
+    margin: 0 0 8px 0;
+    color: #2c3e50;
+    font-size: 18px;
+}
+
+.solicitud-body {
+    padding: 20px;
+}
+
+.solicitud-details p {
+    margin-bottom: 8px;
+    color: #555;
+    line-height: 1.5;
+}
+
+.solicitud-details strong {
+    color: #2c3e50;
+}
+
+.solicitud-actions {
+    padding: 15px 20px;
+    background: #f8f9fa;
+    border-top: 1px solid #eee;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.btn-assign {
+    background: #8e44ad;
+    color: white;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.btn-assign:hover {
+    background: #732d91;
+}
+
+.btn-view {
+    background: #17a2b8;
+    color: white;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.btn-view:hover {
+    background: #138496;
+}
+
+/* Solicitud Cards para Empleados */
+.solicitud-card-empleado {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+    overflow: hidden;
+    border-left: 4px solid #ddd;
+}
+
+.solicitud-header-empleado {
+    background: linear-gradient(90deg, #f8f9fa 0%, #e9ecef 100%);
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.solicitud-badges {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.urgencia-badge {
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.urgencia-badge.critica {
+    background: #e74c3c;
+    color: white;
+}
+
+.urgencia-badge.alta {
+    background: #e67e22;
+    color: white;
+}
+
+.urgencia-badge.media {
+    background: #f39c12;
+    color: white;
+}
+
+.urgencia-badge.baja {
+    background: #27ae60;
+    color: white;
+}
+
+.solicitud-body-empleado {
+    padding: 20px;
+}
+
+.solicitud-actions-empleado {
+    padding: 15px 20px;
+    background: #f8f9fa;
+    border-top: 1px solid #eee;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.btn-contact {
+    background: #28a745;
+    color: white;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.btn-contact:hover {
+    background: #218838;
+}
+
+/* Solicitud Cards Simples */
+.solicitud-card-simple {
+    background: white;
+    border-radius: 6px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    margin-bottom: 15px;
+    padding: 15px;
+    border-left: 3px solid #ddd;
+}
+
+.solicitud-header-simple {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 10px;
+}
+
+.solicitud-header-simple h4 {
+    margin: 0 0 4px 0;
+    color: #2c3e50;
+    font-size: 16px;
+}
+
+.service-type {
+    font-size: 12px;
+    color: #666;
+    background: #f8f9fa;
+    padding: 2px 8px;
+    border-radius: 10px;
+}
+
+.solicitud-meta {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.solicitud-summary p {
+    margin-bottom: 6px;
+    font-size: 14px;
+    color: #666;
+    line-height: 1.4;
+}
+
+.solicitud-actions-simple {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.btn-view-small, .btn-edit-small {
+    padding: 6px 12px;
+    font-size: 12px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.btn-view-small {
+    background: #17a2b8;
+    color: white;
+}
+
+.btn-edit-small {
+    background: #ffc107;
+    color: #212529;
+}
+
+/* Controles para empleados */
+.empleado-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+/* Perfil */
+.perfil-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+}
+
+.perfil-info, .estadisticas-personales {
+    background: #f8f9fa;
+    padding: 25px;
+    border-radius: 8px;
+    border-left: 4px solid #3498db;
+}
+
+.perfil-info h3, .estadisticas-personales h3 {
+    margin: 0 0 20px 0;
+    color: #2c3e50;
+}
+
+.perfil-datos p {
+    margin-bottom: 10px;
+    color: #555;
+}
+
+.perfil-datos strong {
+    color: #2c3e50;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+}
+
+.personal-stat {
+    background: white;
+    padding: 15px;
+    border-radius: 6px;
+    text-align: center;
+    border-left: 3px solid #3498db;
+}
+
+/* Empleados Cards */
+.empleado-card {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+    overflow: hidden;
+    border-left: 4px solid #3498db;
+}
+
+.empleado-header {
+    background: #f8f9fa;
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #eee;
+}
+
+.empleado-info h3 {
+    margin: 0 0 5px 0;
+    color: #2c3e50;
+}
+
+.empleado-info p {
+    margin: 0;
+    color: #666;
+    font-size: 14px;
+}
+
+.rol-badge {
+    padding: 6px 12px;
+    border-radius: 15px;
+    font-size: 12px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.rol-badge.admin {
+    background: #f39c12;
+    color: white;
+}
+
+.rol-badge.mecanico {
+    background: #27ae60;
+    color: white;
+}
+
+.rol-badge.recepcionista {
+    background: #8e44ad;
+    color: white;
+}
+
+.empleado-actions {
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.empleado-status.activo {
+    color: #27ae60;
+    font-weight: bold;
+}
+
+.empleado-status.inactivo {
+    color: #e74c3c;
+    font-weight: bold;
+}
+
+.empleado-buttons {
+    display: flex;
+    gap: 8px;
+}
+
+.btn-toggle {
+    background: #6c757d;
+    color: white;
+    padding: 6px 12px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.btn-toggle:hover {
+    background: #5a6268;
+}
+
+/* Reportes y configuración */
+.reportes-grid, .config-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+}
+
+.reporte-card, .config-card {
+    background: #f8f9fa;
+    padding: 25px;
+    border-radius: 8px;
+    border-left: 4px solid #3498db;
+    text-align: center;
+}
+
+.reporte-card h3, .config-card h3 {
+    margin: 0 0 10px 0;
+    color: #2c3e50;
+}
+
+.reporte-card p, .config-card p {
+    margin-bottom: 20px;
+    color: #666;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .header-content {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .admin-tabs, .empleado-tabs {
+        flex-direction: column;
+    }
+    
+    .tab-btn {
+        min-width: auto;
+    }
+    
+    .admin-stats, .empleado-stats {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
+    }
+    
+    .solicitud-header, .solicitud-header-empleado {
+        flex-direction: column;
+        gap: 15px;
+        align-items: flex-start;
+    }
+    
+    .solicitud-actions, .solicitud-actions-empleado {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .empleado-controls {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .perfil-container {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .reportes-grid, .config-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .empleado-header {
+        flex-direction: column;
+        gap: 15px;
+        align-items: flex-start;
+    }
+    
+    .empleado-actions {
+        flex-direction: column;
+        gap: 15px;
+        align-items: stretch;
+    }
+    
+    .empleado-buttons {
+        justify-content: center;
+    }
+}

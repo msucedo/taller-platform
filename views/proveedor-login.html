@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal Proveedor - Taller Mecánico</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Taller Mecánico</h1>
+            <p>Portal de Proveedores</p>
+        </header>
+
+        <main>
+            <div class="login-container">
+                <div class="login-form">
+                    <h2>👤 Acceso Portal Proveedor</h2>
+                    <p>Ingrese su email para ver todas sus solicitudes enviadas al taller.</p>
+                    
+                    <form id="loginForm">
+                        <div class="form-group">
+                            <label for="email">Email Registrado</label>
+                            <input type="email" id="email" name="email" required 
+                                   placeholder="ejemplo@correo.com">
+                            <small>Use el mismo email con el que envió sus solicitudes</small>
+                        </div>
+                        
+                        <button type="submit" class="btn-submit">Ingresar al Portal</button>
+                    </form>
+                    
+                    <div class="help-section">
+                        <h4>¿Necesita ayuda?</h4>
+                        <ul>
+                            <li>Use el email con el que envió solicitudes al taller</li>
+                            <li>Si no tiene solicitudes registradas, <a href="/">cree una nueva</a></li>
+                            <li>¿Tiene un código de seguimiento? <a href="/tracker">Úselo aquí</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div id="message" class="message hidden"></div>
+        </main>
+
+        <footer>
+            <p>
+                <a href="/">Crear Nueva Solicitud</a> | 
+                <a href="/tracker">Rastrear Solicitud</a> | 
+                <a href="/dashboard">Dashboard (Propietario)</a>
+            </p>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('loginForm');
+            const messageDiv = document.getElementById('message');
+            
+            form.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const email = document.getElementById('email').value.trim();
+                
+                if (!email) {
+                    showMessage('Por favor ingrese su email', 'error');
+                    return;
+                }
+                
+                try {
+                    showMessage('Verificando...', 'info');
+                    
+                    const response = await fetch('/api/proveedor/login', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ email })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (response.ok) {
+                        // Guardar datos en sessionStorage
+                        sessionStorage.setItem('proveedorData', JSON.stringify({
+                            email: email,
+                            nombre: data.proveedor,
+                            solicitudes: data.solicitudes
+                        }));
+                        
+                        showMessage('¡Acceso exitoso! Redirigiendo...', 'success');
+                        setTimeout(() => {
+                            window.location.href = '/proveedor/dashboard';
+                        }, 1500);
+                    } else {
+                        showMessage(data.error || 'Error al acceder', 'error');
+                    }
+                } catch (error) {
+                    showMessage('Error de conexión. Intente nuevamente.', 'error');
+                }
+            });
+            
+            function showMessage(text, type) {
+                messageDiv.textContent = text;
+                messageDiv.className = `message ${type}`;
+                messageDiv.classList.remove('hidden');
+                
+                if (type === 'success' || type === 'info') {
+                    setTimeout(() => {
+                        messageDiv.classList.add('hidden');
+                    }, 3000);
+                }
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acceso Empleados - Taller Mecánico</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Taller Mecánico</h1>
+            <p>Acceso para Empleados</p>
+        </header>
+
+        <main>
+            <div class="login-container">
+                <div class="empleado-login-form">
+                    <h2>🔧 Acceso Empleados</h2>
+                    <p>Ingrese sus credenciales para acceder al sistema interno del taller.</p>
+                    
+                    <form id="empleadoLoginForm">
+                        <div class="form-group">
+                            <label for="email">Email</label>
+                            <input type="email" id="email" name="email" required 
+                                   placeholder="empleado@taller.com">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="password">Contraseña</label>
+                            <input type="password" id="password" name="password" required 
+                                   placeholder="Ingrese su contraseña">
+                        </div>
+                        
+                        <button type="submit" class="btn-submit">Iniciar Sesión</button>
+                    </form>
+                    
+                    <div class="credentials-help">
+                        <h4>🔑 Credenciales por Defecto</h4>
+                        <div class="default-credentials">
+                            <p><strong>Administrador:</strong></p>
+                            <p>Email: <code>admin@taller.com</code></p>
+                            <p>Contraseña: <code>admin123</code></p>
+                            <small>⚠️ Cambiar estas credenciales en producción</small>
+                        </div>
+                    </div>
+                    
+                    <div class="other-access">
+                        <p>¿Eres proveedor? <a href="/proveedor">Accede aquí con Google</a></p>
+                        <p>¿Solo quieres rastrear una solicitud? <a href="/tracker">Usa el tracker</a></p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="message" class="message hidden"></div>
+        </main>
+
+        <footer>
+            <p>
+                <a href="/">Crear Nueva Solicitud</a> | 
+                <a href="/tracker">Rastrear Solicitud</a> | 
+                <a href="/proveedor">Portal Proveedor</a>
+            </p>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('empleadoLoginForm');
+            const messageDiv = document.getElementById('message');
+            
+            form.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const email = document.getElementById('email').value.trim();
+                const password = document.getElementById('password').value;
+                
+                if (!email || !password) {
+                    showMessage('Por favor complete todos los campos', 'error');
+                    return;
+                }
+                
+                try {
+                    showMessage('Verificando credenciales...', 'info');
+                    
+                    const response = await fetch('/api/empleado/login', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ email, password })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (response.ok) {
+                        // Guardar token en localStorage
+                        localStorage.setItem('empleadoToken', data.token);
+                        localStorage.setItem('empleadoData', JSON.stringify({
+                            id: data.user.id,
+                            nombre: data.user.nombre,
+                            email: data.user.email,
+                            rol: data.user.rol
+                        }));
+                        
+                        showMessage('¡Acceso exitoso! Redirigiendo...', 'success');
+                        
+                        // Redireccionar según el rol
+                        setTimeout(() => {
+                            if (data.user.rol === 'admin') {
+                                window.location.href = '/admin/dashboard';
+                            } else {
+                                window.location.href = '/empleado/dashboard';
+                            }
+                        }, 1500);
+                    } else {
+                        showMessage(data.error || 'Error de autenticación', 'error');
+                    }
+                } catch (error) {
+                    showMessage('Error de conexión. Intente nuevamente.', 'error');
+                }
+            });
+            
+            function showMessage(text, type) {
+                messageDiv.textContent = text;
+                messageDiv.className = `message ${type}`;
+                messageDiv.classList.remove('hidden');
+                
+                if (type === 'success' || type === 'info') {
+                    setTimeout(() => {
+                        messageDiv.classList.add('hidden');
+                    }, 3000);
+                }
+            }
+            
+            // Verificar si ya está logueado
+            const token = localStorage.getItem('empleadoToken');
+            if (token) {
+                // Verificar si el token es válido
+                fetch('/api/empleado/verify', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                })
+                .then(response => {
+                    if (response.ok) {
+                        const empleadoData = JSON.parse(localStorage.getItem('empleadoData') || '{}');
+                        if (empleadoData.rol === 'admin') {
+                            window.location.href = '/admin/dashboard';
+                        } else {
+                            window.location.href = '/empleado/dashboard';
+                        }
+                    }
+                })
+                .catch(() => {
+                    // Token inválido, eliminar
+                    localStorage.removeItem('empleadoToken');
+                    localStorage.removeItem('empleadoData');
+                });
+            }
+        });
+    </script>
+</body>
+</html>

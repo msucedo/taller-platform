@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Empleado - Taller Mecánico</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <header class="empleado-header">
+            <div class="header-content">
+                <div class="header-info">
+                    <h1>🔧 Dashboard Empleado</h1>
+                    <p id="welcomeMessage">Bienvenido</p>
+                </div>
+                <div class="header-actions">
+                    <span class="user-badge" id="rolBadge">👤 Empleado</span>
+                    <button onclick="cerrarSesion()" class="btn-logout">Cerrar Sesión</button>
+                </div>
+            </div>
+        </header>
+
+        <main class="empleado-main">
+            <!-- Navegación por tabs -->
+            <div class="empleado-tabs">
+                <button class="tab-btn active" onclick="showTab('mis-solicitudes')">📋 Mis Solicitudes</button>
+                <button class="tab-btn" id="todasTab" onclick="showTab('todas-solicitudes')">📑 Todas las Solicitudes</button>
+                <button class="tab-btn" onclick="showTab('mi-perfil')">👤 Mi Perfil</button>
+            </div>
+
+            <!-- Tab Mis Solicitudes (Asignadas) -->
+            <div id="tab-mis-solicitudes" class="tab-content active">
+                <div class="dashboard-section">
+                    <div class="section-header">
+                        <h2>Mis Solicitudes Asignadas</h2>
+                        <div class="section-actions">
+                            <button onclick="loadMisSolicitudes()" class="btn-refresh">Actualizar</button>
+                        </div>
+                    </div>
+
+                    <!-- Estadísticas de mis solicitudes -->
+                    <div class="empleado-stats">
+                        <div class="stat-card total">
+                            <span class="stat-number" id="misTotalSolicitudes">0</span>
+                            <span class="stat-label">Asignadas a Mí</span>
+                        </div>
+                        <div class="stat-card pendiente">
+                            <span class="stat-number" id="misPendientes">0</span>
+                            <span class="stat-label">Por Iniciar</span>
+                        </div>
+                        <div class="stat-card en_proceso">
+                            <span class="stat-number" id="misProceso">0</span>
+                            <span class="stat-label">En Proceso</span>
+                        </div>
+                        <div class="stat-card completado">
+                            <span class="stat-number" id="misCompletadas">0</span>
+                            <span class="stat-label">Completadas</span>
+                        </div>
+                    </div>
+
+                    <div id="misSolicitudesContainer">
+                        <div class="loading">Cargando solicitudes asignadas...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab Todas las Solicitudes -->
+            <div id="tab-todas-solicitudes" class="tab-content">
+                <div class="dashboard-section">
+                    <div class="section-header">
+                        <h2>Todas las Solicitudes</h2>
+                        <div class="section-actions">
+                            <button onclick="loadTodasSolicitudes()" class="btn-refresh">Actualizar</button>
+                        </div>
+                    </div>
+
+                    <!-- Filtros básicos -->
+                    <div class="empleado-controls">
+                        <div class="search-container">
+                            <input type="text" id="buscadorEmpleado" placeholder="Buscar solicitudes..." class="search-input">
+                            <button onclick="limpiarBusquedaEmpleado()" class="btn-clear-search">Limpiar</button>
+                        </div>
+                        <div class="filter-controls">
+                            <select id="filtroEstadoEmpleado">
+                                <option value="">Todos los estados</option>
+                                <option value="pendiente">Pendiente</option>
+                                <option value="en_proceso">En Proceso</option>
+                                <option value="completado">Completado</option>
+                                <option value="rechazado">Rechazado</option>
+                            </select>
+                            <select id="filtroUrgencia">
+                                <option value="">Todas las urgencias</option>
+                                <option value="critica">Crítica</option>
+                                <option value="alta">Alta</option>
+                                <option value="media">Media</option>
+                                <option value="baja">Baja</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div id="todasSolicitudesContainer">
+                        <div class="loading">Cargando todas las solicitudes...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab Mi Perfil -->
+            <div id="tab-mi-perfil" class="tab-content">
+                <div class="dashboard-section">
+                    <h2>👤 Mi Perfil</h2>
+                    <div class="perfil-container">
+                        <div class="perfil-info">
+                            <h3>Información Personal</h3>
+                            <div class="perfil-datos">
+                                <p><strong>Nombre:</strong> <span id="perfilNombre">-</span></p>
+                                <p><strong>Email:</strong> <span id="perfilEmail">-</span></p>
+                                <p><strong>Rol:</strong> <span id="perfilRol">-</span></p>
+                                <p><strong>Fecha de Ingreso:</strong> <span id="perfilFecha">-</span></p>
+                            </div>
+                            <button onclick="mostrarCambiarPassword()" class="btn-secondary">Cambiar Contraseña</button>
+                        </div>
+
+                        <div class="estadisticas-personales">
+                            <h3>Mis Estadísticas</h3>
+                            <div class="stats-grid">
+                                <div class="personal-stat">
+                                    <span class="stat-number" id="totalAsignadas">0</span>
+                                    <span class="stat-label">Total Asignadas</span>
+                                </div>
+                                <div class="personal-stat">
+                                    <span class="stat-number" id="completadasMes">0</span>
+                                    <span class="stat-label">Completadas este Mes</span>
+                                </div>
+                                <div class="personal-stat">
+                                    <span class="stat-number" id="tiempoPromedio">0</span>
+                                    <span class="stat-label">Tiempo Promedio (días)</span>
+                                </div>
+                                <div class="personal-stat">
+                                    <span class="stat-number" id="satisfaccion">0%</span>
+                                    <span class="stat-label">Tasa de Éxito</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Modal para editar solicitud -->
+        <div id="modalEditarSolicitud" class="modal hidden">
+            <div class="modal-content">
+                <h3>Actualizar Solicitud</h3>
+                <form id="editarForm">
+                    <input type="hidden" id="editarId">
+                    
+                    <div class="form-group">
+                        <label for="editarEstado">Estado</label>
+                        <select id="editarEstado" name="estado">
+                            <option value="pendiente">Pendiente</option>
+                            <option value="en_proceso">En Proceso</option>
+                            <option value="completado">Completado</option>
+                            <option value="rechazado">Rechazado</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="editarNotas">Notas de Trabajo</label>
+                        <textarea id="editarNotas" name="notas_taller" rows="4" 
+                                  placeholder="Describe el trabajo realizado, partes utilizadas, observaciones..."></textarea>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn-submit">Guardar</button>
+                        <button type="button" onclick="cerrarModal('modalEditarSolicitud')" class="btn-cancel">Cancelar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Modal para cambiar contraseña -->
+        <div id="modalPassword" class="modal hidden">
+            <div class="modal-content">
+                <h3>Cambiar Contraseña</h3>
+                <form id="passwordForm">
+                    <div class="form-group">
+                        <label for="currentPassword">Contraseña Actual</label>
+                        <input type="password" id="currentPassword" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="newPassword">Nueva Contraseña</label>
+                        <input type="password" id="newPassword" required minlength="6">
+                    </div>
+                    <div class="form-group">
+                        <label for="confirmPassword">Confirmar Nueva Contraseña</label>
+                        <input type="password" id="confirmPassword" required>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn-submit">Cambiar</button>
+                        <button type="button" onclick="cerrarModal('modalPassword')" class="btn-cancel">Cancelar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div id="message" class="message hidden"></div>
+    </div>
+
+    <script src="/js/empleado-dashboard.js"></script>
+</body>
+</html>

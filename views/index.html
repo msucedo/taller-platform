@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Taller Mecánico - Solicitar Servicio</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Taller Mecánico</h1>
+            <p>Portal de Proveedores - Solicitud de Servicios</p>
+        </header>
+
+        <main>
+            <div class="wizard-container">
+                <h2>Solicitar Servicio</h2>
+                
+                <!-- Indicador de progreso -->
+                <div class="progress-indicator">
+                    <div class="step active" data-step="1">
+                        <span class="step-number">1</span>
+                        <span class="step-title">Datos del Proveedor</span>
+                    </div>
+                    <div class="step" data-step="2">
+                        <span class="step-number">2</span>
+                        <span class="step-title">Tipo de Servicio</span>
+                    </div>
+                    <div class="step" data-step="3">
+                        <span class="step-number">3</span>
+                        <span class="step-title">Detalles y Confirmación</span>
+                    </div>
+                </div>
+
+                <form id="solicitudForm" class="solicitud-form">
+                    <!-- Paso 1: Datos del Proveedor -->
+                    <div class="step-content active" data-step="1">
+                        <h3>Datos del Proveedor</h3>
+                        <p class="step-description">Ingrese sus datos de contacto</p>
+                        
+                        <div class="form-group">
+                            <label for="proveedor_nombre">Nombre Completo*</label>
+                            <input type="text" id="proveedor_nombre" name="proveedor_nombre" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="proveedor_email">Email*</label>
+                            <input type="email" id="proveedor_email" name="proveedor_email" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="proveedor_telefono">Teléfono</label>
+                            <input type="tel" id="proveedor_telefono" name="proveedor_telefono" placeholder="Ej: 3001234567">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="empresa">Empresa (Opcional)</label>
+                            <input type="text" id="empresa" name="empresa" placeholder="Nombre de su empresa">
+                        </div>
+                    </div>
+
+                    <!-- Paso 2: Tipo de Servicio -->
+                    <div class="step-content" data-step="2">
+                        <h3>Tipo de Servicio</h3>
+                        <p class="step-description">Seleccione el servicio que necesita</p>
+                        
+                        <div class="form-group">
+                            <label for="tipo_servicio">Tipo de Servicio*</label>
+                            <select id="tipo_servicio" name="tipo_servicio" required>
+                                <option value="">Seleccionar servicio</option>
+                                <option value="repuestos">Repuestos y Autopartes</option>
+                                <option value="herramientas">Herramientas Prestadas</option>
+                                <option value="pintura">Servicios de Pintura</option>
+                                <option value="grua">Grúa/Remolque</option>
+                                <option value="mecanico">Servicios Mecánicos</option>
+                                <option value="otros">Otros</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="urgencia">Nivel de Urgencia*</label>
+                            <div class="urgency-selector">
+                                <label class="urgency-option">
+                                    <input type="radio" name="urgencia" value="baja">
+                                    <span class="urgency-card baja">
+                                        <strong>Baja</strong>
+                                        <small>1-2 semanas</small>
+                                    </span>
+                                </label>
+                                <label class="urgency-option">
+                                    <input type="radio" name="urgencia" value="media" checked>
+                                    <span class="urgency-card media">
+                                        <strong>Media</strong>
+                                        <small>3-5 días</small>
+                                    </span>
+                                </label>
+                                <label class="urgency-option">
+                                    <input type="radio" name="urgencia" value="alta">
+                                    <span class="urgency-card alta">
+                                        <strong>Alta</strong>
+                                        <small>1-2 días</small>
+                                    </span>
+                                </label>
+                                <label class="urgency-option">
+                                    <input type="radio" name="urgencia" value="critica">
+                                    <span class="urgency-card critica">
+                                        <strong>Crítica</strong>
+                                        <small>Inmediato</small>
+                                    </span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Paso 3: Detalles y Confirmación -->
+                    <div class="step-content" data-step="3">
+                        <h3>Detalles del Servicio</h3>
+                        <p class="step-description">Describa detalladamente lo que necesita</p>
+                        
+                        <div class="form-group">
+                            <label for="descripcion">Descripción del Servicio*</label>
+                            <textarea id="descripcion" name="descripcion" rows="5" required placeholder="Describa detalladamente el servicio o repuesto que solicita. Incluya marcas, modelos, especificaciones técnicas, etc."></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="fecha_preferida">Fecha Preferida (Opcional)</label>
+                            <input type="date" id="fecha_preferida" name="fecha_preferida" min="">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="presupuesto_estimado">Presupuesto Estimado (Opcional)</label>
+                            <select id="presupuesto_estimado" name="presupuesto_estimado">
+                                <option value="">No especificado</option>
+                                <option value="0-100">$0 - $100.000</option>
+                                <option value="100-500">$100.000 - $500.000</option>
+                                <option value="500-1000">$500.000 - $1.000.000</option>
+                                <option value="1000+">Más de $1.000.000</option>
+                            </select>
+                        </div>
+
+                        <!-- Resumen -->
+                        <div class="summary-section">
+                            <h4>Resumen de su solicitud:</h4>
+                            <div id="summary-content"></div>
+                        </div>
+                    </div>
+
+                    <!-- Botones de navegación -->
+                    <div class="wizard-navigation">
+                        <button type="button" id="prevBtn" class="btn-secondary" style="display: none;">Anterior</button>
+                        <button type="button" id="nextBtn" class="btn-primary">Siguiente</button>
+                        <button type="submit" id="submitBtn" class="btn-submit" style="display: none;">Enviar Solicitud</button>
+                    </div>
+                </form>
+            </div>
+
+            <div id="message" class="message hidden"></div>
+        </main>
+
+        <footer>
+            <p>
+                <a href="/proveedor">Portal Proveedor</a> | 
+                <a href="/tracker">Rastrear Solicitud</a> | 
+                <a href="/empleado/login">Acceso Empleados</a> | 
+                <a href="/dashboard">Dashboard (Propietario)</a>
+            </p>
+        </footer>
+    </div>
+
+    <script src="/js/solicitud.js"></script>
+</body>
+</html>

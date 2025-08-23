@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Administrador - Taller Mecánico</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header class="admin-header">
+            <div class="header-content">
+                <div class="header-info">
+                    <h1>🛠️ Dashboard Administrador</h1>
+                    <p id="welcomeMessage">Bienvenido</p>
+                </div>
+                <div class="header-actions">
+                    <span class="user-badge admin">👑 Admin</span>
+                    <button onclick="cerrarSesion()" class="btn-logout">Cerrar Sesión</button>
+                </div>
+            </div>
+        </header>
+
+        <main class="admin-main">
+            <!-- Navegación por tabs -->
+            <div class="admin-tabs">
+                <button class="tab-btn active" onclick="showTab('solicitudes')">📋 Solicitudes</button>
+                <button class="tab-btn" onclick="showTab('empleados')">👥 Empleados</button>
+                <button class="tab-btn" onclick="showTab('reportes')">📊 Reportes</button>
+                <button class="tab-btn" onclick="showTab('configuracion')">⚙️ Configuración</button>
+            </div>
+
+            <!-- Tab Solicitudes -->
+            <div id="tab-solicitudes" class="tab-content active">
+                <div class="dashboard-section">
+                    <div class="section-header">
+                        <h2>Gestión de Solicitudes</h2>
+                        <div class="section-actions">
+                            <button onclick="loadSolicitudes()" class="btn-refresh">Actualizar</button>
+                            <div class="export-buttons">
+                                <button onclick="exportarPDF()" class="btn-export btn-pdf">📄 PDF</button>
+                                <button onclick="exportarExcel()" class="btn-export btn-excel">📊 Excel</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Estadísticas generales -->
+                    <div class="admin-stats">
+                        <div class="stat-card total">
+                            <span class="stat-number" id="totalSolicitudes">0</span>
+                            <span class="stat-label">Total Solicitudes</span>
+                        </div>
+                        <div class="stat-card pendiente">
+                            <span class="stat-number" id="pendientesCount">0</span>
+                            <span class="stat-label">Pendientes</span>
+                        </div>
+                        <div class="stat-card en_proceso">
+                            <span class="stat-number" id="procesoCount">0</span>
+                            <span class="stat-label">En Proceso</span>
+                        </div>
+                        <div class="stat-card completado">
+                            <span class="stat-number" id="completadoCount">0</span>
+                            <span class="stat-label">Completadas</span>
+                        </div>
+                        <div class="stat-card rechazado">
+                            <span class="stat-number" id="rechazadoCount">0</span>
+                            <span class="stat-label">Rechazadas</span>
+                        </div>
+                    </div>
+
+                    <!-- Controles de filtrado -->
+                    <div class="dashboard-controls">
+                        <div class="search-container">
+                            <input type="text" id="buscadorSolicitudes" placeholder="Buscar por proveedor, descripción o email..." class="search-input">
+                            <button onclick="limpiarBusqueda()" class="btn-clear-search">Limpiar</button>
+                        </div>
+                        <div class="filter-controls">
+                            <select id="filtroEstado">
+                                <option value="">Todos los estados</option>
+                                <option value="pendiente">Pendiente</option>
+                                <option value="en_proceso">En Proceso</option>
+                                <option value="completado">Completado</option>
+                                <option value="rechazado">Rechazado</option>
+                            </select>
+                            <select id="filtroServicio">
+                                <option value="">Todos los servicios</option>
+                                <option value="repuestos">Repuestos</option>
+                                <option value="herramientas">Herramientas</option>
+                                <option value="pintura">Pintura</option>
+                                <option value="grua">Grúa/Remolque</option>
+                                <option value="mecanico">Mecánicos</option>
+                                <option value="otros">Otros</option>
+                            </select>
+                            <select id="filtroAsignacion">
+                                <option value="">Todas las asignaciones</option>
+                                <option value="sin_asignar">Sin asignar</option>
+                                <option value="asignadas">Asignadas</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div id="solicitudesContainer">
+                        <div class="loading">Cargando solicitudes...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab Empleados -->
+            <div id="tab-empleados" class="tab-content">
+                <div class="dashboard-section">
+                    <div class="section-header">
+                        <h2>Gestión de Empleados</h2>
+                        <button onclick="mostrarFormularioEmpleado()" class="btn-primary">+ Nuevo Empleado</button>
+                    </div>
+
+                    <div id="empleadosContainer">
+                        <div class="loading">Cargando empleados...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab Reportes -->
+            <div id="tab-reportes" class="tab-content">
+                <div class="dashboard-section">
+                    <h2>📊 Reportes y Estadísticas</h2>
+                    <div class="reportes-grid">
+                        <div class="reporte-card">
+                            <h3>Solicitudes por Mes</h3>
+                            <p>Análisis mensual de solicitudes recibidas</p>
+                            <button class="btn-secondary">Generar Reporte</button>
+                        </div>
+                        <div class="reporte-card">
+                            <h3>Proveedores Más Activos</h3>
+                            <p>Top 10 proveedores por solicitudes enviadas</p>
+                            <button class="btn-secondary">Generar Reporte</button>
+                        </div>
+                        <div class="reporte-card">
+                            <h3>Tiempos de Respuesta</h3>
+                            <p>Análisis de eficiencia del taller</p>
+                            <button class="btn-secondary">Generar Reporte</button>
+                        </div>
+                        <div class="reporte-card">
+                            <h3>Servicios Más Solicitados</h3>
+                            <p>Estadísticas por tipo de servicio</p>
+                            <button class="btn-secondary">Generar Reporte</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab Configuración -->
+            <div id="tab-configuracion" class="tab-content">
+                <div class="dashboard-section">
+                    <h2>⚙️ Configuración del Sistema</h2>
+                    <div class="config-grid">
+                        <div class="config-card">
+                            <h3>Mi Perfil</h3>
+                            <p>Cambiar información personal y contraseña</p>
+                            <button class="btn-secondary">Editar Perfil</button>
+                        </div>
+                        <div class="config-card">
+                            <h3>Configuración del Taller</h3>
+                            <p>Nombre, dirección, información de contacto</p>
+                            <button class="btn-secondary">Configurar</button>
+                        </div>
+                        <div class="config-card">
+                            <h3>Tipos de Servicio</h3>
+                            <p>Gestionar categorías de servicios disponibles</p>
+                            <button class="btn-secondary">Gestionar</button>
+                        </div>
+                        <div class="config-card">
+                            <h3>Respaldo de Datos</h3>
+                            <p>Exportar base de datos completa</p>
+                            <button class="btn-secondary">Respaldar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Modal para asignar solicitudes -->
+        <div id="modalAsignarSolicitud" class="modal hidden">
+            <div class="modal-content">
+                <h3>Asignar Solicitud</h3>
+                <form id="asignarForm">
+                    <input type="hidden" id="asignarSolicitudId">
+                    
+                    <div class="form-group">
+                        <label>Detalles de la solicitud:</label>
+                        <div id="asignarDetalle" class="solicitud-detalle"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="empleadoAsignado">Asignar a:</label>
+                        <select id="empleadoAsignado" name="empleadoId" required>
+                            <option value="">Seleccionar empleado...</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="notasAsignacion">Notas de asignación (opcional):</label>
+                        <textarea id="notasAsignacion" name="notas" rows="3" 
+                                  placeholder="Instrucciones especiales para el empleado..."></textarea>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="submit" class="btn-submit">Asignar</button>
+                        <button type="button" onclick="cerrarModal('modalAsignarSolicitud')" class="btn-cancel">Cancelar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Modal para nuevo empleado -->
+        <div id="modalEmpleado" class="modal hidden">
+            <div class="modal-content">
+                <h3 id="empleadoModalTitle">Nuevo Empleado</h3>
+                <form id="empleadoForm">
+                    <div class="form-group">
+                        <label for="empleadoNombre">Nombre Completo*</label>
+                        <input type="text" id="empleadoNombre" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="empleadoEmail">Email*</label>
+                        <input type="email" id="empleadoEmail" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="empleadoPassword">Contraseña*</label>
+                        <input type="password" id="empleadoPassword" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="empleadoRol">Rol*</label>
+                        <select id="empleadoRol" required>
+                            <option value="">Seleccionar rol</option>
+                            <option value="admin">Administrador</option>
+                            <option value="mecanico">Mecánico</option>
+                            <option value="recepcionista">Recepcionista</option>
+                        </select>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn-submit">Guardar</button>
+                        <button type="button" onclick="cerrarModal('modalEmpleado')" class="btn-cancel">Cancelar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Modal de editar solicitud (heredado) -->
+        <div id="modalEditarSolicitud" class="modal hidden">
+            <div class="modal-content">
+                <h3>Editar Solicitud</h3>
+                <form id="editarForm">
+                    <input type="hidden" id="editarId">
+                    
+                    <div class="form-group">
+                        <label for="editarEstado">Estado</label>
+                        <select id="editarEstado" name="estado">
+                            <option value="pendiente">Pendiente</option>
+                            <option value="en_proceso">En Proceso</option>
+                            <option value="completado">Completado</option>
+                            <option value="rechazado">Rechazado</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="editarNotas">Notas del Taller</label>
+                        <textarea id="editarNotas" name="notas_taller" rows="3"></textarea>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn-submit">Guardar</button>
+                        <button type="button" onclick="cerrarModal('modalEditarSolicitud')" class="btn-cancel">Cancelar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div id="message" class="message hidden"></div>
+    </div>
+
+    <script src="/js/admin-dashboard.js"></script>
+</body>
+</html>
