@@ -629,6 +629,70 @@ app.post('/api/solicitudes/:id/asignar', requireAuth, requireAdmin, (req, res) =
     });
 });
 
+// DEBUG: Endpoint temporal para verificar admin
+app.get('/api/debug/admin', (req, res) => {
+    const db = new sqlite3.Database(dbPath);
+    
+    db.get('SELECT email, nombre, rol, activo FROM usuarios WHERE rol = ?', ['admin'], (err, admin) => {
+        if (err) {
+            res.status(500).json({ error: err.message });
+            db.close();
+            return;
+        }
+        
+        const adminEmail = process.env.ADMIN_EMAIL || 'admin@taller.com';
+        const adminName = process.env.ADMIN_NAME || 'Administrador';
+        
+        res.json({
+            admin_found: !!admin,
+            admin_data: admin || null,
+            env_vars: {
+                ADMIN_EMAIL: adminEmail,
+                ADMIN_NAME: adminName,
+                ADMIN_PASSWORD_SET: !!process.env.ADMIN_PASSWORD
+            }
+        });
+        
+        db.close();
+    });
+});
+
+// DEBUG: Endpoint para recrear admin (TEMPORAL)
+app.post('/api/debug/recreate-admin', (req, res) => {
+    const db = new sqlite3.Database(dbPath);
+    const { hashPassword } = require('./database/init');
+    
+    const adminEmail = process.env.ADMIN_EMAIL || 'admin@taller.com';
+    const adminPassword = hashPassword(process.env.ADMIN_PASSWORD || 'admin123');
+    const adminName = process.env.ADMIN_NAME || 'Administrador';
+    
+    // Primero eliminar admin existente si existe
+    db.run('DELETE FROM usuarios WHERE email = ?', [adminEmail], function(err) {
+        if (err) {
+            res.status(500).json({ error: err.message });
+            db.close();
+            return;
+        }
+        
+        // Crear nuevo admin
+        db.run(`INSERT INTO usuarios (email, password_hash, nombre, rol, activo) 
+               VALUES (?, ?, ?, ?, ?)`, 
+               [adminEmail, adminPassword, adminName, 'admin', 1], 
+               function(err) {
+                   if (err) {
+                       res.status(500).json({ error: err.message });
+                   } else {
+                       res.json({ 
+                           message: 'Admin recreado exitosamente',
+                           email: adminEmail,
+                           name: adminName
+                       });
+                   }
+                   db.close();
+               });
+    });
+});
+
 app.listen(PORT, () => {
     console.log(`🚀 Servidor ejecutándose en http://localhost:${PORT}`);
     console.log(`📁 Base de datos: ${dbPath}`);

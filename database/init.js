@@ -38,16 +38,30 @@ function createAdminUser(db) {
     const adminPassword = hashPassword(process.env.ADMIN_PASSWORD || 'admin123');
     const adminName = process.env.ADMIN_NAME || 'Administrador';
     
+    console.log(`🔍 Intentando crear admin con email: ${adminEmail}`);
+    
     db.get('SELECT id FROM usuarios WHERE email = ?', [adminEmail], (err, row) => {
+        if (err) {
+            console.error('❌ Error al verificar admin existente:', err.message);
+            return;
+        }
+        
         if (!row) {
-            db.run(`INSERT INTO usuarios (email, password_hash, nombre, rol) 
-                   VALUES (?, ?, ?, ?)`, 
-                   [adminEmail, adminPassword, adminName, 'admin'], 
+            db.run(`INSERT INTO usuarios (email, password_hash, nombre, rol, activo) 
+                   VALUES (?, ?, ?, ?, ?)`, 
+                   [adminEmail, adminPassword, adminName, 'admin', 1], 
                    function(err) {
-                       if (!err) {
-                           console.log(`Usuario administrador creado: ${adminEmail}`);
+                       if (err) {
+                           console.error('❌ Error al crear administrador:', err.message);
+                       } else {
+                           console.log(`✅ Usuario administrador creado exitosamente: ${adminEmail}`);
+                           console.log(`📧 Email: ${adminEmail}`);
+                           console.log(`👤 Nombre: ${adminName}`);
+                           console.log(`🔐 Password configurado: ${!!process.env.ADMIN_PASSWORD ? 'Desde ENV' : 'Por defecto'}`);
                        }
                    });
+        } else {
+            console.log(`ℹ️  Usuario administrador ya existe: ${adminEmail}`);
         }
     });
 }
