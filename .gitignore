@@ -9,9 +9,6 @@ node_modules/
 
 # Database
 database/taller.db
-database/
-*.db
-*.sqlite
 
 # claude code
 .claude/
