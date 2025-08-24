@@ -1,3 +1,79 @@
+/* =================================
+   DESIGN SYSTEM - VARIABLES CSS
+   ================================= */
+
+:root {
+    /* Colors - Paleta consistente */
+    --color-primary: #3498db;
+    --color-primary-hover: #2980b9;
+    --color-primary-light: #85c1e9;
+    
+    --color-secondary: #95a5a6;
+    --color-secondary-hover: #7f8c8d;
+    
+    --color-success: #27ae60;
+    --color-success-hover: #219a52;
+    
+    --color-warning: #f39c12;
+    --color-warning-hover: #e67e22;
+    
+    --color-danger: #e74c3c;
+    --color-danger-hover: #c0392b;
+    
+    --color-info: #17a2b8;
+    --color-info-hover: #138496;
+    
+    --color-dark: #2c3e50;
+    --color-light: #f8f9fa;
+    --color-white: #ffffff;
+    --color-gray: #6c757d;
+    --color-gray-light: #e9ecef;
+    
+    /* Typography */
+    --font-size-xs: 12px;
+    --font-size-sm: 14px;
+    --font-size-base: 16px;
+    --font-size-lg: 18px;
+    --font-size-xl: 24px;
+    --font-size-xxl: 32px;
+    
+    /* Spacing */
+    --spacing-xs: 4px;
+    --spacing-sm: 8px;
+    --spacing-base: 16px;
+    --spacing-lg: 24px;
+    --spacing-xl: 32px;
+    --spacing-xxl: 48px;
+    
+    /* Border radius */
+    --border-radius-sm: 4px;
+    --border-radius-base: 8px;
+    --border-radius-lg: 12px;
+    --border-radius-pill: 20px;
+    
+    /* Shadows */
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.1);
+    --shadow-base: 0 2px 8px rgba(0,0,0,0.1);
+    --shadow-lg: 0 4px 12px rgba(0,0,0,0.15);
+    
+    /* Transitions */
+    --transition-fast: 0.2s ease;
+    --transition-base: 0.3s ease;
+    
+    /* Button sizes */
+    --btn-height-sm: 32px;
+    --btn-height-base: 44px;
+    --btn-height-lg: 52px;
+    
+    /* Card spacing */
+    --card-padding: var(--spacing-base);
+    --card-gap: var(--spacing-lg);
+}
+
+/* =================================
+   RESET Y BASE
+   ================================= */
+
 * {
     margin: 0;
     padding: 0;
@@ -83,20 +159,131 @@ main {
     border-color: #3498db;
 }
 
-.btn-submit {
-    width: 100%;
-    background: #27ae60;
-    color: white;
-    padding: 15px;
+/* =================================
+   BUTTON SYSTEM - Consistente en toda la app
+   ================================= */
+
+/* Base button */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-sm) var(--spacing-base);
     border: none;
-    border-radius: 4px;
-    font-size: 18px;
+    border-radius: var(--border-radius-sm);
+    font-size: var(--font-size-base);
+    font-weight: 500;
     cursor: pointer;
-    transition: background-color 0.3s;
+    text-decoration: none;
+    text-align: center;
+    transition: all var(--transition-base);
+    white-space: nowrap;
+    min-height: var(--btn-height-base);
+    box-shadow: var(--shadow-sm);
+    gap: var(--spacing-xs);
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-base);
+}
+
+.btn:active {
+    transform: translateY(0);
+}
+
+/* Button sizes */
+.btn-sm {
+    min-height: var(--btn-height-sm);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    font-size: var(--font-size-sm);
+}
+
+.btn-lg {
+    min-height: var(--btn-height-lg);
+    padding: var(--spacing-base) var(--spacing-xl);
+    font-size: var(--font-size-lg);
+}
+
+/* Button variants */
+.btn-primary {
+    background: var(--color-primary);
+    color: var(--color-white);
+}
+
+.btn-primary:hover {
+    background: var(--color-primary-hover);
+}
+
+.btn-secondary {
+    background: var(--color-secondary);
+    color: var(--color-white);
+}
+
+.btn-secondary:hover {
+    background: var(--color-secondary-hover);
+}
+
+.btn-success {
+    background: var(--color-success);
+    color: var(--color-white);
+}
+
+.btn-success:hover {
+    background: var(--color-success-hover);
+}
+
+.btn-warning {
+    background: var(--color-warning);
+    color: var(--color-white);
+}
+
+.btn-warning:hover {
+    background: var(--color-warning-hover);
+}
+
+.btn-danger {
+    background: var(--color-danger);
+    color: var(--color-white);
+}
+
+.btn-danger:hover {
+    background: var(--color-danger-hover);
+}
+
+.btn-info {
+    background: var(--color-info);
+    color: var(--color-white);
+}
+
+.btn-info:hover {
+    background: var(--color-info-hover);
+}
+
+/* Button full width */
+.btn-block {
+    width: 100%;
+}
+
+/* Legacy support - mantener funcionando los botones existentes */
+.btn-submit {
+    @extend .btn, .btn-success, .btn-block;
+    /* Fallback para browsers sin @extend */
+    width: 100%;
+    background: var(--color-success);
+    color: var(--color-white);
+    padding: var(--spacing-sm) var(--spacing-base);
+    border: none;
+    border-radius: var(--border-radius-sm);
+    font-size: var(--font-size-base);
+    cursor: pointer;
+    transition: all var(--transition-base);
+    min-height: var(--btn-height-base);
 }
 
 .btn-submit:hover {
-    background: #219a52;
+    background: var(--color-success-hover);
+    transform: translateY(-1px);
 }
 
 .message {
@@ -155,35 +342,17 @@ main {
     gap: 8px;
 }
 
+/* Export buttons usando el nuevo sistema */
 .btn-export {
-    padding: 8px 12px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: 500;
-    transition: all 0.3s;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    /* Extender del sistema base */
 }
 
 .btn-pdf {
-    background: #e74c3c;
-    color: white;
-}
-
-.btn-pdf:hover {
-    background: #c0392b;
-    transform: translateY(-1px);
+    /* Usar la clase danger para PDF (rojo) */
 }
 
 .btn-excel {
-    background: #27ae60;
-    color: white;
-}
-
-.btn-excel:hover {
-    background: #219a52;
-    transform: translateY(-1px);
+    /* Usar la clase success para Excel (verde) */
 }
 
 .search-container {
@@ -206,33 +375,13 @@ main {
     border-color: #3498db;
 }
 
+/* Botones usando el nuevo sistema - solo definir overrides específicos si es necesario */
 .btn-clear-search {
-    background: #95a5a6;
-    color: white;
-    padding: 8px 12px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 14px;
-    transition: background-color 0.3s;
-}
-
-.btn-clear-search:hover {
-    background: #7f8c8d;
+    /* Extiende de .btn .btn-secondary */
 }
 
 .btn-refresh {
-    background: #3498db;
-    color: white;
-    padding: 10px 20px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 16px;
-}
-
-.btn-refresh:hover {
-    background: #2980b9;
+    /* Extiende de .btn .btn-primary */
 }
 
 .filter-controls {
@@ -246,29 +395,25 @@ main {
     border-radius: 4px;
 }
 
+/* Legacy card classes - redirigidas al nuevo sistema */
 .solicitud-card {
-    background: white;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    margin-bottom: 20px;
-    overflow: hidden;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    /* Usar .card base */
 }
 
 .solicitud-card.pendiente {
-    border-left: 5px solid #f39c12;
+    /* Usar .card .card-pendiente */
 }
 
 .solicitud-card.en_proceso {
-    border-left: 5px solid #3498db;
+    /* Usar .card .card-en_proceso */
 }
 
 .solicitud-card.completado {
-    border-left: 5px solid #27ae60;
+    /* Usar .card .card-completado */
 }
 
 .solicitud-card.rechazado {
-    border-left: 5px solid #e74c3c;
+    /* Usar .card .card-rechazado */
 }
 
 .solicitud-header {
@@ -326,18 +471,195 @@ main {
     text-align: right;
 }
 
-.btn-edit {
-    background: #e67e22;
-    color: white;
-    padding: 8px 16px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 14px;
+/* =================================
+   CARD SYSTEM - Tarjetas consistentes
+   ================================= */
+
+/* Base card */
+.card {
+    background: var(--color-white);
+    border-radius: var(--border-radius-base);
+    box-shadow: var(--shadow-base);
+    padding: var(--card-padding);
+    margin-bottom: var(--card-gap);
+    transition: all var(--transition-base);
+    overflow: hidden;
 }
 
-.btn-edit:hover {
-    background: #d35400;
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+}
+
+/* Card header */
+.card-header {
+    background: var(--color-light);
+    padding: var(--spacing-base);
+    margin: calc(-1 * var(--card-padding)) calc(-1 * var(--card-padding)) var(--spacing-base) calc(-1 * var(--card-padding));
+    border-bottom: 1px solid var(--color-gray-light);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--spacing-sm);
+}
+
+.card-title {
+    margin: 0;
+    color: var(--color-dark);
+    font-size: var(--font-size-lg);
+}
+
+.card-subtitle {
+    margin: 0;
+    color: var(--color-gray);
+    font-size: var(--font-size-sm);
+}
+
+/* Card body */
+.card-body {
+    padding: var(--spacing-base);
+    margin: calc(-1 * var(--card-padding));
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
+.card-body p {
+    margin-bottom: var(--spacing-sm);
+    color: var(--color-gray);
+    line-height: 1.5;
+}
+
+.card-body strong {
+    color: var(--color-dark);
+}
+
+/* Card footer/actions */
+.card-actions {
+    padding: var(--spacing-base);
+    background: var(--color-light);
+    margin: var(--spacing-base) calc(-1 * var(--card-padding)) calc(-1 * var(--card-padding)) calc(-1 * var(--card-padding));
+    border-top: 1px solid var(--color-gray-light);
+    display: flex;
+    gap: var(--spacing-sm);
+    flex-wrap: wrap;
+}
+
+/* Card states */
+.card-pendiente {
+    border-left: 4px solid var(--color-warning);
+}
+
+.card-en_proceso {
+    border-left: 4px solid var(--color-primary);
+}
+
+.card-completado {
+    border-left: 4px solid var(--color-success);
+}
+
+.card-rechazado {
+    border-left: 4px solid var(--color-danger);
+}
+
+/* Badge system */
+.badge {
+    display: inline-flex;
+    align-items: center;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: var(--border-radius-pill);
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    text-transform: uppercase;
+    gap: var(--spacing-xs);
+}
+
+.badge-pendiente {
+    background: var(--color-warning);
+    color: var(--color-white);
+}
+
+.badge-en_proceso {
+    background: var(--color-primary);
+    color: var(--color-white);
+}
+
+.badge-completado {
+    background: var(--color-success);
+    color: var(--color-white);
+}
+
+.badge-rechazado {
+    background: var(--color-danger);
+    color: var(--color-white);
+}
+
+.badge-activo {
+    background: var(--color-success);
+    color: var(--color-white);
+}
+
+.badge-inactivo {
+    background: var(--color-secondary);
+    color: var(--color-white);
+}
+
+/* Urgency badges */
+.badge-baja {
+    background: var(--color-success);
+    color: var(--color-white);
+}
+
+.badge-media {
+    background: var(--color-warning);
+    color: var(--color-white);
+}
+
+.badge-alta {
+    background: var(--color-danger);
+    color: var(--color-white);
+}
+
+.badge-critica {
+    background: var(--color-danger);
+    color: var(--color-white);
+    animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+/* Stats card specific */
+.stat-card {
+    background: var(--color-white);
+    border-radius: var(--border-radius-base);
+    box-shadow: var(--shadow-base);
+    padding: var(--spacing-lg);
+    text-align: center;
+    border-left: 4px solid var(--color-primary);
+    transition: all var(--transition-base);
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+}
+
+.stat-number {
+    display: block;
+    font-size: var(--font-size-xxl);
+    font-weight: bold;
+    color: var(--color-dark);
+    margin-bottom: var(--spacing-xs);
+}
+
+.stat-label {
+    color: var(--color-gray);
+    font-size: var(--font-size-sm);
+    text-transform: uppercase;
+    font-weight: 500;
 }
 
 .modal {
@@ -374,22 +696,9 @@ main {
 
 .form-actions {
     display: flex;
-    gap: 10px;
+    gap: var(--spacing-sm);
     justify-content: flex-end;
-    margin-top: 20px;
-}
-
-.btn-cancel {
-    background: #95a5a6;
-    color: white;
-    padding: 10px 20px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-}
-
-.btn-cancel:hover {
-    background: #7f8c8d;
+    margin-top: var(--spacing-lg);
 }
 
 .solicitud-detalle {

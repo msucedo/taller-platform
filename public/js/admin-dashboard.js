@@ -132,34 +132,32 @@ function mostrarSolicitudes(solicitudesList) {
     }
     
     const html = solicitudesList.map(solicitud => `
-        <div class="solicitud-card ${solicitud.estado}">
-            <div class="solicitud-header">
+        <div class="card card-${solicitud.estado}">
+            <div class="card-header">
                 <div class="solicitud-info">
-                    <h3>${solicitud.proveedor_nombre}</h3>
-                    <span class="tracker-code">📋 ${solicitud.tracker_code}</span>
+                    <h3 class="card-title">${solicitud.proveedor_nombre}</h3>
+                    <span class="card-subtitle">📋 ${solicitud.tracker_code}</span>
                 </div>
-                <span class="estado-badge ${solicitud.estado}">${solicitud.estado.toUpperCase()}</span>
+                <span class="badge badge-${solicitud.estado}">${solicitud.estado.toUpperCase()}</span>
             </div>
-            <div class="solicitud-body">
-                <div class="solicitud-details">
-                    <p><strong>Servicio:</strong> ${solicitud.tipo_servicio}</p>
-                    <p><strong>Email:</strong> ${solicitud.proveedor_email}</p>
-                    ${solicitud.proveedor_telefono ? `<p><strong>Teléfono:</strong> ${solicitud.proveedor_telefono}</p>` : ''}
-                    ${solicitud.empresa ? `<p><strong>Empresa:</strong> ${solicitud.empresa}</p>` : ''}
-                    <p><strong>Urgencia:</strong> ${solicitud.urgencia}</p>
-                    <p><strong>Descripción:</strong> ${solicitud.descripcion}</p>
-                    <p><strong>Fecha:</strong> ${formatDate(solicitud.fecha_solicitud)}</p>
-                    ${solicitud.fecha_preferida ? `<p><strong>Fecha Preferida:</strong> ${formatDate(solicitud.fecha_preferida)}</p>` : ''}
-                    ${solicitud.presupuesto_estimado ? `<p><strong>Presupuesto:</strong> ${solicitud.presupuesto_estimado}</p>` : ''}
-                    ${solicitud.notas_taller ? `<p><strong>Notas:</strong> ${solicitud.notas_taller}</p>` : ''}
-                    ${solicitud.empleado_asignado ? `<p><strong>Asignado a:</strong> ${solicitud.empleado_asignado} (${solicitud.empleado_rol})</p>` : '<p><strong>Estado:</strong> Sin asignar</p>'}
-                    ${solicitud.notas_asignacion ? `<p><strong>Notas de asignación:</strong> ${solicitud.notas_asignacion}</p>` : ''}
-                </div>
+            <div class="card-body">
+                <p><strong>Servicio:</strong> ${solicitud.tipo_servicio}</p>
+                <p><strong>Email:</strong> ${solicitud.proveedor_email}</p>
+                ${solicitud.proveedor_telefono ? `<p><strong>Teléfono:</strong> ${solicitud.proveedor_telefono}</p>` : ''}
+                ${solicitud.empresa ? `<p><strong>Empresa:</strong> ${solicitud.empresa}</p>` : ''}
+                <p><strong>Urgencia:</strong> ${solicitud.urgencia}</p>
+                <p><strong>Descripción:</strong> ${solicitud.descripcion}</p>
+                <p><strong>Fecha:</strong> ${formatDate(solicitud.fecha_solicitud)}</p>
+                ${solicitud.fecha_preferida ? `<p><strong>Fecha Preferida:</strong> ${formatDate(solicitud.fecha_preferida)}</p>` : ''}
+                ${solicitud.presupuesto_estimado ? `<p><strong>Presupuesto:</strong> ${solicitud.presupuesto_estimado}</p>` : ''}
+                ${solicitud.notas_taller ? `<p><strong>Notas:</strong> ${solicitud.notas_taller}</p>` : ''}
+                ${solicitud.empleado_asignado ? `<p><strong>Asignado a:</strong> ${solicitud.empleado_asignado} (${solicitud.empleado_rol})</p>` : '<p><strong>Estado:</strong> Sin asignar</p>'}
+                ${solicitud.notas_asignacion ? `<p><strong>Notas de asignación:</strong> ${solicitud.notas_asignacion}</p>` : ''}
             </div>
-            <div class="solicitud-actions">
-                <button onclick="editarSolicitud(${solicitud.id})" class="btn-edit">Editar</button>
-                <button onclick="asignarSolicitud(${solicitud.id})" class="btn-assign">${solicitud.empleado_asignado ? 'Reasignar' : 'Asignar'}</button>
-                <button onclick="verDetalleTracker('${solicitud.tracker_code}')" class="btn-view">Ver Tracker</button>
+            <div class="card-actions">
+                <button onclick="editarSolicitud(${solicitud.id})" class="btn btn-warning btn-sm">Editar</button>
+                <button onclick="asignarSolicitud(${solicitud.id})" class="btn btn-info btn-sm">${solicitud.empleado_asignado ? 'Reasignar' : 'Asignar'}</button>
+                <button onclick="verDetalleTracker('${solicitud.tracker_code}')" class="btn btn-primary btn-sm">Ver Tracker</button>
             </div>
         </div>
     `).join('');
