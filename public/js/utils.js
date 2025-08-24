@@ -25,6 +25,17 @@ window.AppUtils = {
         }).format(precio);
     },
 
+    // Función para formatear moneda (alias para compatibilidad)
+    formatMoney(amount) {
+        if (amount === null || amount === undefined || isNaN(amount)) {
+            return '0.00';
+        }
+        return Number(amount).toLocaleString('es-MX', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        });
+    },
+
     // Debounce para búsquedas
     debounce(func, wait) {
         let timeout;

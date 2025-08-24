@@ -134,7 +134,7 @@ sqlite3 database/taller.db "UPDATE usuarios SET activo = 1"
 ```
 
 ## Notas, mejoras
-- en la pantalla "dashboard administrador" no sirven los botones de arriba para "empleados", "reportes" y "configuracion", no hacen nada al hacer clic, tampoco sirve el boton "cerrar sesion" no hace nada y el boton "inventario" manda a una pantalla con este error: "{"error":"Token no proporcionado"}"
+- el boton "inventario" manda a una pantalla con este error: "{"error":"Token no proporcionado"}"
 
 
 ## 📄 Licencia

@@ -1,6 +1,6 @@
 {
   "name": "taller-platform",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Plataforma web para llantera - solicitudes de proveedores",
   "main": "server.js",
   "scripts": {
@@ -41,7 +41,8 @@
     "sqlite3": "^5.1.6"
   },
   "devDependencies": {
-    "nodemon": "^3.0.1"
+    "nodemon": "^3.0.1",
+    "puppeteer": "^24.17.0"
   },
   "keywords": [
     "llantera",

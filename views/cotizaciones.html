@@ -3,182 +3,467 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cotizaciones - Llantera</title>
+    <title>Gestión de Cotizaciones - Llantera</title>
     <link rel="stylesheet" href="/css/styles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        .cotizaciones-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .cotizaciones-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .cotizaciones-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: var(--primary-color);
+            display: block;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 0.9rem;
+            margin-top: 5px;
+        }
+
+        .cotizaciones-table {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .table-header {
+            background: var(--primary-color);
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .table-controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .cotizacion-card {
+            border-bottom: 1px solid #eee;
+            padding: 20px;
+            transition: background-color 0.2s;
+        }
+
+        .cotizacion-card:hover {
+            background-color: #f8f9fa;
+        }
+
+        .cotizacion-card:last-child {
+            border-bottom: none;
+        }
+
+        .cotizacion-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .cotizacion-numero {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        .cotizacion-estado {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            text-transform: uppercase;
+        }
+
+        .estado-borrador { background: #e3f2fd; color: #1976d2; }
+        .estado-pendiente { background: #fff3e0; color: #f57c00; }
+        .estado-aprobada { background: #e8f5e8; color: #388e3c; }
+        .estado-rechazada { background: #ffebee; color: #d32f2f; }
+        .estado-expirada { background: #f3e5f5; color: #7b1fa2; }
+
+        .cotizacion-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 15px;
+        }
+
+        .cotizacion-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .modal-cotizacion {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-cotizacion.hidden {
+            display: none !important;
+        }
+
+        .modal-content-cotizacion {
+            background: white;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 0;
+        }
+
+        .modal-header {
+            background: var(--primary-color);
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-body {
+            padding: 30px;
+        }
+
+        .form-step {
+            margin-bottom: 30px;
+        }
+
+        .step-title {
+            font-size: 1.3rem;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: var(--primary-color);
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .form-group-full {
+            grid-column: 1 / -1;
+        }
+
+        .items-section {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .item-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr 1fr auto;
+            gap: 10px;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .item-row:last-child {
+            border-bottom: none;
+        }
+
+        .totales-section {
+            background: #e3f2fd;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .total-final {
+            font-size: 1.3rem;
+            font-weight: bold;
+            border-top: 2px solid var(--primary-color);
+            padding-top: 10px;
+        }
+
+        .btn-add-item {
+            background: var(--color-success) !important;
+            color: white !important;
+        }
+
+        .btn-remove-item {
+            background: var(--color-danger) !important;
+            color: white !important;
+        }
+
+        .btn-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: white;
+            cursor: pointer;
+            padding: 5px 10px;
+            border-radius: 4px;
+        }
+
+        .btn-close:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        @media (max-width: 768px) {
+            .cotizaciones-header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .cotizacion-info {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+
+            .table-controls {
+                flex-direction: column;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .item-row {
+                grid-template-columns: 1fr;
+                gap: 5px;
+            }
+        }
+    </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>Llantera</h1>
-            <p>Sistema de Cotizaciones de Llantas</p>
-        </header>
+    <div class="cotizaciones-container">
+        <div class="cotizaciones-header">
+            <h1>📋 Gestión de Cotizaciones</h1>
+            <div class="header-actions">
+                <button onclick="nuevaCotizacion()" class="btn btn-primary">+ Nueva Cotización</button>
+                <button onclick="volverAlDashboard()" class="btn btn-secondary">← Volver al Dashboard</button>
+            </div>
+        </div>
 
-        <main>
-            <div class="wizard-container">
-                <h2>Cotizar Llantas</h2>
-                
-                <!-- Selector de tipo de búsqueda -->
-                <div class="search-type-selector">
-                    <div class="search-option">
-                        <label class="search-option-card">
-                            <input type="radio" name="search_type" value="vehiculo" checked>
-                            <span class="option-card">
-                                <strong>🚗 Por Vehículo</strong>
-                                <small>Buscar por marca, modelo, año y versión</small>
-                            </span>
-                        </label>
-                    </div>
-                    <div class="search-option">
-                        <label class="search-option-card">
-                            <input type="radio" name="search_type" value="medida">
-                            <span class="option-card">
-                                <strong>📏 Por Medida</strong>
-                                <small>Buscar por ancho, serie y rin</small>
-                            </span>
-                        </label>
-                    </div>
-                </div>
+        <!-- Estadísticas -->
+        <div class="cotizaciones-stats">
+            <div class="stat-card">
+                <span class="stat-number" id="totalCotizaciones">0</span>
+                <span class="stat-label">Total Cotizaciones</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-number" id="cotizacionesPendientes">0</span>
+                <span class="stat-label">Pendientes</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-number" id="cotizacionesAprobadas">0</span>
+                <span class="stat-label">Aprobadas</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-number" id="valorTotal">$0</span>
+                <span class="stat-label">Valor Total Aprobado</span>
+            </div>
+        </div>
 
-                <!-- Formulario por Vehículo -->
-                <div id="form-vehiculo" class="search-form active">
-                    <h3>Buscar por Vehículo</h3>
-                    <p class="step-description">Seleccione las características de su vehículo</p>
-                    
-                    <div class="form-group">
-                        <label for="marca">Marca*</label>
-                        <select id="marca" name="marca" required>
-                            <option value="">Seleccionar marca</option>
-                            <option value="loading" disabled>Cargando marcas...</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="modelo">Modelo*</label>
-                        <select id="modelo" name="modelo" required disabled>
-                            <option value="">Primero seleccione una marca</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="ano">Año*</label>
-                        <select id="ano" name="ano" required disabled>
-                            <option value="">Seleccione primero marca y modelo</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="version">Versión*</label>
-                        <select id="version" name="version" required disabled>
-                            <option value="">Seleccione primero año</option>
-                        </select>
-                    </div>
-
-                    <div class="form-actions">
-                        <button type="button" id="buscar-vehiculo" class="btn btn-primary">Buscar Llantas</button>
-                    </div>
-                </div>
-
-                <!-- Formulario por Medida -->
-                <div id="form-medida" class="search-form">
-                    <h3>Buscar por Medida</h3>
-                    <p class="step-description">Ingrese las medidas de la llanta</p>
-                    
-                    <div class="medida-inputs">
-                        <div class="form-group">
-                            <label for="ancho">Ancho*</label>
-                            <select id="ancho" name="ancho" required>
-                                <option value="">Ancho</option>
-                                <option value="175">175</option>
-                                <option value="185">185</option>
-                                <option value="195">195</option>
-                                <option value="205">205</option>
-                                <option value="215">215</option>
-                                <option value="225">225</option>
-                                <option value="235">235</option>
-                                <option value="245">245</option>
-                                <option value="255">255</option>
-                                <option value="265">265</option>
-                                <option value="275">275</option>
-                                <option value="285">285</option>
-                                <option value="295">295</option>
-                                <option value="305">305</option>
-                            </select>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="serie">Serie*</label>
-                            <select id="serie" name="serie" required>
-                                <option value="">Serie</option>
-                                <option value="35">35</option>
-                                <option value="40">40</option>
-                                <option value="45">45</option>
-                                <option value="50">50</option>
-                                <option value="55">55</option>
-                                <option value="60">60</option>
-                                <option value="65">65</option>
-                                <option value="70">70</option>
-                                <option value="75">75</option>
-                                <option value="80">80</option>
-                            </select>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="rin">Rin*</label>
-                            <select id="rin" name="rin" required>
-                                <option value="">Rin</option>
-                                <option value="13">13</option>
-                                <option value="14">14</option>
-                                <option value="15">15</option>
-                                <option value="16">16</option>
-                                <option value="17">17</option>
-                                <option value="18">18</option>
-                                <option value="19">19</option>
-                                <option value="20">20</option>
-                                <option value="21">21</option>
-                                <option value="22">22</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="medida-example">
-                        <p><strong>Ejemplo de medida:</strong> 205/55R16</p>
-                        <ul>
-                            <li><strong>205</strong> = Ancho (mm)</li>
-                            <li><strong>55</strong> = Serie (%)</li>
-                            <li><strong>16</strong> = Rin (pulgadas)</li>
-                        </ul>
-                    </div>
-
-                    <div class="form-actions">
-                        <button type="button" id="buscar-medida" class="btn btn-primary">Buscar Llantas</button>
-                    </div>
-                </div>
-
-                <!-- Resultados de búsqueda -->
-                <div id="resultados" class="resultados-container" style="display: none;">
-                    <h3>Llantas Disponibles</h3>
-                    <div id="catalogo-llantas" class="catalogo-grid">
-                        <!-- Los resultados se cargarán aquí dinámicamente -->
-                    </div>
-                </div>
+        <!-- Tabla de cotizaciones -->
+        <div class="cotizaciones-table">
+            <div class="table-header">
+                <h2>Lista de Cotizaciones</h2>
+                <button onclick="loadCotizaciones()" class="btn btn-light btn-sm">🔄 Actualizar</button>
+            </div>
+            
+            <div class="table-controls" style="padding: 0 20px; padding-top: 20px;">
+                <input type="text" id="buscadorCotizaciones" placeholder="Buscar por cliente, número o título..." class="search-input">
+                <select id="filtroEstado">
+                    <option value="">Todos los estados</option>
+                    <option value="borrador">Borrador</option>
+                    <option value="pendiente">Pendiente</option>
+                    <option value="aprobada">Aprobada</option>
+                    <option value="rechazada">Rechazada</option>
+                    <option value="expirada">Expirada</option>
+                </select>
+                <button onclick="limpiarFiltros()" class="btn btn-secondary btn-sm">Limpiar</button>
             </div>
 
-            <div id="message" class="message hidden"></div>
-        </main>
-
-        <footer>
-            <p>
-                <a href="/">Inicio</a> | 
-                <a href="/proveedor">Portal Proveedor</a> | 
-                <a href="/tracker">Rastrear Solicitud</a> | 
-                <a href="/empleado/login">Acceso Empleados</a> | 
-                <a href="/dashboard">Dashboard (Propietario)</a>
-            </p>
-            <div class="version-info">
-                <span id="app-version">v1.0.0</span> | 
-                <span>by msaucedo</span>
+            <div id="cotizacionesContainer">
+                <div style="padding: 40px; text-align: center; color: #666;">
+                    Cargando cotizaciones...
+                </div>
             </div>
-        </footer>
+        </div>
+    </div>
+
+    <!-- Modal Nueva/Editar Cotización -->
+    <div id="modalCotizacion" class="modal-cotizacion hidden" style="display: none;">
+        <div class="modal-content-cotizacion">
+            <div class="modal-header">
+                <h3 id="modalTitle">Nueva Cotización</h3>
+                <button onclick="cerrarModalCotizacion()" class="btn-close">×</button>
+            </div>
+            <div class="modal-body">
+                <form id="cotizacionForm">
+                    <input type="hidden" id="cotizacionId">
+                    
+                    <!-- Paso 1: Información del Cliente -->
+                    <div class="form-step">
+                        <div class="step-title">1. Información del Cliente</div>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="clienteNombre">Nombre del Cliente *</label>
+                                <input type="text" id="clienteNombre" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="clienteEmail">Email *</label>
+                                <input type="email" id="clienteEmail" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="clienteTelefono">Teléfono</label>
+                                <input type="tel" id="clienteTelefono">
+                            </div>
+                            <div class="form-group">
+                                <label for="clienteEmpresa">Empresa</label>
+                                <input type="text" id="clienteEmpresa">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Paso 2: Detalles de la Cotización -->
+                    <div class="form-step">
+                        <div class="step-title">2. Detalles de la Cotización</div>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="cotizacionTitulo">Título *</label>
+                                <input type="text" id="cotizacionTitulo" required placeholder="Ej: Llantas para Toyota Corolla 2020">
+                            </div>
+                            <div class="form-group">
+                                <label for="validezDias">Válida por (días)</label>
+                                <input type="number" id="validezDias" value="30" min="1" max="365">
+                            </div>
+                            <div class="form-group form-group-full">
+                                <label for="cotizacionDescripcion">Descripción</label>
+                                <textarea id="cotizacionDescripcion" rows="3" placeholder="Descripción detallada de los productos/servicios..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Paso 3: Items -->
+                    <div class="form-step">
+                        <div class="step-title">
+                            3. Items de la Cotización
+                            <button type="button" onclick="agregarItem()" class="btn btn-success btn-sm btn-add-item" style="float: right;">+ Agregar Item</button>
+                        </div>
+                        <div class="items-section">
+                            <div class="item-row" style="font-weight: bold; background: #dee2e6;">
+                                <div>Descripción</div>
+                                <div>Cantidad</div>
+                                <div>Precio Unit.</div>
+                                <div>Desc. %</div>
+                                <div>Subtotal</div>
+                                <div>Acciones</div>
+                            </div>
+                            <div id="itemsContainer">
+                                <!-- Los items se agregan dinámicamente -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Paso 4: Totales y Configuración -->
+                    <div class="form-step">
+                        <div class="step-title">4. Totales y Configuración</div>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="descuentoGeneral">Descuento General (%)</label>
+                                <input type="number" id="descuentoGeneral" value="0" min="0" max="100" step="0.01" onchange="calcularTotales()">
+                            </div>
+                            <div class="form-group">
+                                <label for="impuestoPorcentaje">Impuesto (%)</label>
+                                <input type="number" id="impuestoPorcentaje" value="16" min="0" max="100" step="0.01" onchange="calcularTotales()">
+                            </div>
+                        </div>
+                        <div class="form-group form-group-full">
+                            <label for="terminosCondiciones">Términos y Condiciones</label>
+                            <textarea id="terminosCondiciones" rows="3" placeholder="Los precios incluyen IVA. Cotización válida por 30 días. Se requiere 50% de anticipo."></textarea>
+                        </div>
+                        <div class="form-group form-group-full">
+                            <label for="notasInternas">Notas Internas (no se muestran al cliente)</label>
+                            <textarea id="notasInternas" rows="2" placeholder="Notas internas para el equipo..."></textarea>
+                        </div>
+                        
+                        <div class="totales-section">
+                            <div class="total-row">
+                                <span>Subtotal:</span>
+                                <span id="subtotalMostrar">$0.00</span>
+                            </div>
+                            <div class="total-row">
+                                <span>Descuento:</span>
+                                <span id="descuentoMostrar">$0.00</span>
+                            </div>
+                            <div class="total-row">
+                                <span>Impuesto:</span>
+                                <span id="impuestoMostrar">$0.00</span>
+                            </div>
+                            <div class="total-row total-final">
+                                <span>TOTAL:</span>
+                                <span id="totalMostrar">$0.00</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-actions" style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
+                        <button type="submit" class="btn btn-success">💾 Guardar Cotización</button>
+                        <button type="button" onclick="cerrarModalCotizacion()" class="btn btn-secondary">Cancelar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="message" class="message hidden"></div>
     </div>
 
     <script src="/js/utils.js"></script>

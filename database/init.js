@@ -239,6 +239,109 @@ function initDatabase() {
             fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP
         )`);
         
+        // Sistema de cotizaciones
+        db.run(`CREATE TABLE IF NOT EXISTS cotizaciones (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            numero TEXT UNIQUE NOT NULL,
+            solicitud_id INTEGER,
+            cliente_nombre TEXT NOT NULL,
+            cliente_email TEXT NOT NULL,
+            cliente_telefono TEXT,
+            cliente_empresa TEXT,
+            titulo TEXT NOT NULL,
+            descripcion TEXT,
+            estado TEXT DEFAULT 'borrador', -- borrador, pendiente, aprobada, rechazada, expirada
+            version TEXT DEFAULT '1.0',
+            subtotal DECIMAL(12,2) DEFAULT 0,
+            descuento_porcentaje DECIMAL(5,2) DEFAULT 0,
+            descuento_monto DECIMAL(10,2) DEFAULT 0,
+            impuesto_porcentaje DECIMAL(5,2) DEFAULT 16,
+            impuesto_monto DECIMAL(10,2) DEFAULT 0,
+            total DECIMAL(12,2) DEFAULT 0,
+            moneda TEXT DEFAULT 'MXN',
+            validez_dias INTEGER DEFAULT 30,
+            fecha_expiracion DATE,
+            terminos_condiciones TEXT,
+            notas_internas TEXT,
+            usuario_creador INTEGER NOT NULL,
+            fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP,
+            fecha_actualizacion DATETIME DEFAULT CURRENT_TIMESTAMP,
+            fecha_enviado DATETIME,
+            fecha_aprobacion DATETIME,
+            FOREIGN KEY (solicitud_id) REFERENCES solicitudes(id),
+            FOREIGN KEY (usuario_creador) REFERENCES usuarios(id)
+        )`);
+        
+        // Items de cotización
+        db.run(`CREATE TABLE IF NOT EXISTS cotizacion_items (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            cotizacion_id INTEGER NOT NULL,
+            tipo TEXT NOT NULL, -- 'producto', 'servicio'
+            producto_id INTEGER, -- referencia a productos_llantas si es producto
+            codigo TEXT,
+            nombre TEXT NOT NULL,
+            descripcion TEXT,
+            cantidad INTEGER NOT NULL DEFAULT 1,
+            precio_unitario DECIMAL(10,2) NOT NULL,
+            descuento_porcentaje DECIMAL(5,2) DEFAULT 0,
+            descuento_monto DECIMAL(10,2) DEFAULT 0,
+            subtotal DECIMAL(10,2) NOT NULL,
+            orden INTEGER DEFAULT 0,
+            fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (cotizacion_id) REFERENCES cotizaciones(id) ON DELETE CASCADE,
+            FOREIGN KEY (producto_id) REFERENCES productos_llantas(id)
+        )`);
+        
+        // Historial de estados de cotización
+        db.run(`CREATE TABLE IF NOT EXISTS cotizacion_historial (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            cotizacion_id INTEGER NOT NULL,
+            estado_anterior TEXT,
+            estado_nuevo TEXT NOT NULL,
+            comentario TEXT,
+            usuario_id INTEGER,
+            fecha DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (cotizacion_id) REFERENCES cotizaciones(id) ON DELETE CASCADE,
+            FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+        )`);
+        
+        // Templates de cotización
+        db.run(`CREATE TABLE IF NOT EXISTS cotizacion_templates (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            nombre TEXT NOT NULL,
+            descripcion TEXT,
+            contenido_html TEXT,
+            estilos_css TEXT,
+            es_default BOOLEAN DEFAULT 0,
+            activo BOOLEAN DEFAULT 1,
+            usuario_creador INTEGER,
+            fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (usuario_creador) REFERENCES usuarios(id)
+        )`);
+        
+        // Configuración del sistema de cotizaciones
+        db.run(`CREATE TABLE IF NOT EXISTS cotizacion_configuracion (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            clave TEXT UNIQUE NOT NULL,
+            valor TEXT,
+            descripcion TEXT,
+            tipo TEXT DEFAULT 'string', -- string, number, boolean, json
+            fecha_actualizacion DATETIME DEFAULT CURRENT_TIMESTAMP
+        )`);
+        
+        // Insertar configuraciones por defecto
+        db.run(`INSERT OR IGNORE INTO cotizacion_configuracion (clave, valor, descripcion, tipo) VALUES 
+            ('empresa_nombre', 'Llantera El Neumático', 'Nombre de la empresa', 'string'),
+            ('empresa_direccion', 'Av. Principal #123, Ciudad', 'Dirección de la empresa', 'string'),
+            ('empresa_telefono', '(555) 123-4567', 'Teléfono de contacto', 'string'),
+            ('empresa_email', 'info@llantera.com', 'Email de contacto', 'string'),
+            ('empresa_website', 'www.llantera.com', 'Sitio web', 'string'),
+            ('cotizacion_validez_dias', '30', 'Días de validez por defecto', 'number'),
+            ('cotizacion_impuesto_porcentaje', '16', 'Porcentaje de impuesto por defecto', 'number'),
+            ('cotizacion_numeracion_prefijo', 'COT-', 'Prefijo para numeración de cotizaciones', 'string'),
+            ('cotizacion_terminos', 'Los precios incluyen IVA. Cotización válida por 30 días. Se requiere 50% de anticipo.', 'Términos y condiciones por defecto', 'string')
+        `);
+        
         // Crear usuario administrador por defecto
         createAdminUser(db);
         

@@ -1,55 +1,387 @@
-let vehiculoData = {};
-let catalogoLlantas = [];
+let cotizaciones = [];
+let cotizacionesFiltradas = [];
+let currentCotizacion = null;
+let itemCounter = 0;
 
 document.addEventListener('DOMContentLoaded', function() {
-    initializePage();
-    setupEventListeners();
-    cargarMarcas();
+    AppUtils.cargarVersion();
+    verificarAutenticacion();
+    
+    // Event listeners
+    document.getElementById('buscadorCotizaciones').addEventListener('input', filtrarCotizaciones);
+    document.getElementById('filtroEstado').addEventListener('change', filtrarCotizaciones);
+    document.getElementById('cotizacionForm').addEventListener('submit', guardarCotizacion);
+    
+    // Cerrar modal con Escape
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            cerrarModalCotizacion();
+        }
+    });
+    
+    // Cerrar modal al hacer clic fuera
+    document.getElementById('modalCotizacion').addEventListener('click', function(e) {
+        if (e.target === this) {
+            cerrarModalCotizacion();
+        }
+    });
+    
+    // Cargar datos iniciales
+    loadCotizaciones();
+    loadEstadisticas();
 });
 
-function initializePage() {
-    // Cargar versión de la app
-    AppUtils.cargarVersion();
+function verificarAutenticacion() {
+    const token = localStorage.getItem('empleadoToken');
+    const empleadoData = JSON.parse(localStorage.getItem('empleadoData') || '{}');
     
-    // Mostrar formulario por vehículo por defecto
-    mostrarFormulario('vehiculo');
-}
-
-function setupEventListeners() {
-    // Selector de tipo de búsqueda
-    document.querySelectorAll('input[name="search_type"]').forEach(radio => {
-        radio.addEventListener('change', function() {
-            mostrarFormulario(this.value);
-        });
-    });
-
-    // Dropdowns de vehículo
-    document.getElementById('marca').addEventListener('change', onMarcaChange);
-    document.getElementById('modelo').addEventListener('change', onModeloChange);
-    document.getElementById('ano').addEventListener('change', onAnoChange);
-
-    // Botones de búsqueda
-    document.getElementById('buscar-vehiculo').addEventListener('click', buscarPorVehiculo);
-    document.getElementById('buscar-medida').addEventListener('click', buscarPorMedida);
-}
-
-function mostrarFormulario(tipo) {
-    const formVehiculo = document.getElementById('form-vehiculo');
-    const formMedida = document.getElementById('form-medida');
-    
-    if (tipo === 'vehiculo') {
-        formVehiculo.classList.add('active');
-        formMedida.classList.remove('active');
-    } else {
-        formMedida.classList.add('active');
-        formVehiculo.classList.remove('active');
+    if (!token || empleadoData.rol !== 'admin') {
+        window.location.href = '/empleado/login';
+        return;
     }
     
-    // Limpiar resultados
-    document.getElementById('resultados').style.display = 'none';
+    // Verificar token válido
+    fetch('/api/empleado/verify', {
+        headers: {
+            'Authorization': `Bearer ${token}`
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            localStorage.removeItem('empleadoToken');
+            localStorage.removeItem('empleadoData');
+            window.location.href = '/empleado/login';
+        }
+    })
+    .catch(() => {
+        localStorage.removeItem('empleadoToken');
+        localStorage.removeItem('empleadoData');
+        window.location.href = '/empleado/login';
+    });
 }
 
-// Funciones para datos de vehículos
+async function loadCotizaciones() {
+    try {
+        const token = localStorage.getItem('empleadoToken');
+        const response = await fetch('/api/cotizaciones', {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        if (response.ok) {
+            cotizaciones = await response.json();
+            cotizacionesFiltradas = cotizaciones;
+            mostrarCotizaciones();
+        } else {
+            AppUtils.mostrarMensaje('Error al cargar cotizaciones', 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        AppUtils.mostrarMensaje('Error de conexión', 'error');
+    }
+}
+
+async function loadEstadisticas() {
+    try {
+        const token = localStorage.getItem('empleadoToken');
+        const response = await fetch('/api/cotizaciones/estadisticas', {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        if (response.ok) {
+            const stats = await response.json();
+            document.getElementById('totalCotizaciones').textContent = stats.total || 0;
+            document.getElementById('cotizacionesPendientes').textContent = stats.pendientes || 0;
+            document.getElementById('cotizacionesAprobadas').textContent = stats.aprobadas || 0;
+            document.getElementById('valorTotal').textContent = `$${AppUtils.formatMoney(stats.valor_total || 0)}`;
+        }
+    } catch (error) {
+        console.error('Error al cargar estadísticas:', error);
+    }
+}
+
+function mostrarCotizaciones() {
+    const container = document.getElementById('cotizacionesContainer');
+    
+    if (cotizacionesFiltradas.length === 0) {
+        container.innerHTML = `
+            <div style="padding: 40px; text-align: center; color: #666;">
+                <p>No hay cotizaciones para mostrar</p>
+                <button onclick="nuevaCotizacion()" class="btn btn-primary">+ Crear Primera Cotización</button>
+            </div>
+        `;
+        return;
+    }
+    
+    const html = cotizacionesFiltradas.map(cotizacion => {
+        const fechaCreacion = new Date(cotizacion.fecha_creacion).toLocaleDateString('es-ES');
+        const fechaExpiracion = cotizacion.fecha_expiracion ? 
+            new Date(cotizacion.fecha_expiracion).toLocaleDateString('es-ES') : 'N/A';
+        
+        return `
+            <div class="cotizacion-card">
+                <div class="cotizacion-header">
+                    <div class="cotizacion-numero">${cotizacion.numero}</div>
+                    <div class="cotizacion-estado estado-${cotizacion.estado}">${cotizacion.estado}</div>
+                </div>
+                <div class="cotizacion-info">
+                    <div>
+                        <strong>Cliente:</strong> ${cotizacion.cliente_nombre}<br>
+                        <strong>Email:</strong> ${cotizacion.cliente_email}
+                        ${cotizacion.cliente_empresa ? `<br><strong>Empresa:</strong> ${cotizacion.cliente_empresa}` : ''}
+                    </div>
+                    <div>
+                        <strong>Título:</strong> ${cotizacion.titulo}<br>
+                        <strong>Total:</strong> $${AppUtils.formatMoney(cotizacion.total)}<br>
+                        <strong>Creado por:</strong> ${cotizacion.usuario_nombre}
+                    </div>
+                    <div>
+                        <strong>Fecha Creación:</strong> ${fechaCreacion}<br>
+                        <strong>Válida hasta:</strong> ${fechaExpiracion}<br>
+                        <strong>Versión:</strong> ${cotizacion.version}
+                    </div>
+                </div>
+                <div class="cotizacion-actions">
+                    <button onclick="verCotizacion(${cotizacion.id})" class="btn btn-primary btn-sm">Ver</button>
+                    ${cotizacion.estado === 'borrador' ? 
+                        `<button onclick="editarCotizacion(${cotizacion.id})" class="btn btn-warning btn-sm">Editar</button>` : ''}
+                    <button onclick="duplicarCotizacion(${cotizacion.id})" class="btn btn-info btn-sm">Duplicar</button>
+                    <button onclick="generarPDF(${cotizacion.id})" class="btn btn-success btn-sm">PDF</button>
+                    ${cotizacion.estado === 'borrador' ? 
+                        `<button onclick="enviarCotizacion(${cotizacion.id})" class="btn btn-primary btn-sm">Enviar</button>` : ''}
+                    ${['pendiente', 'borrador'].includes(cotizacion.estado) ? 
+                        `<button onclick="cambiarEstado(${cotizacion.id}, 'aprobada')" class="btn btn-success btn-sm">Aprobar</button>
+                         <button onclick="cambiarEstado(${cotizacion.id}, 'rechazada')" class="btn btn-danger btn-sm">Rechazar</button>` : ''}
+                </div>
+            </div>
+        `;
+    }).join('');
+    
+    container.innerHTML = html;
+}
+
+function filtrarCotizaciones() {
+    const buscador = document.getElementById('buscadorCotizaciones').value.toLowerCase().trim();
+    const filtroEstado = document.getElementById('filtroEstado').value;
+    
+    cotizacionesFiltradas = cotizaciones.filter(cotizacion => {
+        const matchBuscador = !buscador || 
+            cotizacion.cliente_nombre.toLowerCase().includes(buscador) ||
+            cotizacion.cliente_email.toLowerCase().includes(buscador) ||
+            cotizacion.numero.toLowerCase().includes(buscador) ||
+            cotizacion.titulo.toLowerCase().includes(buscador);
+        
+        const matchEstado = !filtroEstado || cotizacion.estado === filtroEstado;
+        
+        return matchBuscador && matchEstado;
+    });
+    
+    mostrarCotizaciones();
+}
+
+function limpiarFiltros() {
+    document.getElementById('buscadorCotizaciones').value = '';
+    document.getElementById('filtroEstado').value = '';
+    filtrarCotizaciones();
+}
+
+function nuevaCotizacion() {
+    currentCotizacion = null;
+    document.getElementById('modalTitle').textContent = 'Nueva Cotización';
+    document.getElementById('cotizacionForm').reset();
+    document.getElementById('cotizacionId').value = '';
+    
+    // Limpiar items y agregar uno por defecto
+    document.getElementById('itemsContainer').innerHTML = '';
+    itemCounter = 0;
+    agregarItem();
+    
+    calcularTotales();
+    const modal = document.getElementById('modalCotizacion');
+    modal.classList.remove('hidden');
+    modal.style.display = 'flex';
+}
+
+function agregarItem(itemData = null) {
+    itemCounter++;
+    const itemId = `item-${itemCounter}`;
+    
+    const itemHtml = `
+        <div class="item-row" id="${itemId}">
+            <div>
+                <input type="text" class="item-nombre" placeholder="Nombre del producto/servicio" 
+                       value="${itemData?.nombre || ''}" onchange="calcularTotales()" required>
+                <input type="text" class="item-descripcion" placeholder="Descripción detallada" 
+                       value="${itemData?.descripcion || ''}" style="margin-top: 5px;">
+            </div>
+            <div>
+                <input type="number" class="item-cantidad" min="1" step="1" 
+                       value="${itemData?.cantidad || 1}" onchange="calcularTotales()" required>
+            </div>
+            <div>
+                <input type="number" class="item-precio" min="0" step="0.01" 
+                       value="${itemData?.precio_unitario || 0}" onchange="calcularTotales()" required>
+            </div>
+            <div>
+                <input type="number" class="item-descuento" min="0" max="100" step="0.01" 
+                       value="${itemData?.descuento_porcentaje || 0}" onchange="calcularTotales()">
+            </div>
+            <div>
+                <span class="item-subtotal">$0.00</span>
+            </div>
+            <div>
+                <button type="button" onclick="eliminarItem('${itemId}')" class="btn btn-danger btn-sm btn-remove-item">×</button>
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('itemsContainer').insertAdjacentHTML('beforeend', itemHtml);
+    calcularTotales();
+}
+
+function eliminarItem(itemId) {
+    const itemsContainer = document.getElementById('itemsContainer');
+    if (itemsContainer.children.length > 1) {
+        document.getElementById(itemId).remove();
+        calcularTotales();
+    } else {
+        AppUtils.mostrarMensaje('Debe mantener al menos un item', 'warning');
+    }
+}
+
+function calcularTotales() {
+    let subtotal = 0;
+    
+    const itemRows = document.querySelectorAll('#itemsContainer .item-row');
+    itemRows.forEach(row => {
+        const cantidad = parseFloat(row.querySelector('.item-cantidad').value) || 0;
+        const precio = parseFloat(row.querySelector('.item-precio').value) || 0;
+        const descuentoPorcentaje = parseFloat(row.querySelector('.item-descuento').value) || 0;
+        
+        const itemSubtotal = cantidad * precio;
+        const itemDescuento = (itemSubtotal * descuentoPorcentaje) / 100;
+        const itemTotal = itemSubtotal - itemDescuento;
+        
+        row.querySelector('.item-subtotal').textContent = `$${AppUtils.formatMoney(itemTotal)}`;
+        subtotal += itemTotal;
+    });
+    
+    const descuentoGeneral = parseFloat(document.getElementById('descuentoGeneral').value) || 0;
+    const impuestoPorcentaje = parseFloat(document.getElementById('impuestoPorcentaje').value) || 0;
+    
+    const descuentoMonto = (subtotal * descuentoGeneral) / 100;
+    const subtotalConDescuento = subtotal - descuentoMonto;
+    const impuestoMonto = (subtotalConDescuento * impuestoPorcentaje) / 100;
+    const total = subtotalConDescuento + impuestoMonto;
+    
+    document.getElementById('subtotalMostrar').textContent = `$${AppUtils.formatMoney(subtotal)}`;
+    document.getElementById('descuentoMostrar').textContent = `$${AppUtils.formatMoney(descuentoMonto)}`;
+    document.getElementById('impuestoMostrar').textContent = `$${AppUtils.formatMoney(impuestoMonto)}`;
+    document.getElementById('totalMostrar').textContent = `$${AppUtils.formatMoney(total)}`;
+}
+
+function cerrarModalCotizacion() {
+    const modal = document.getElementById('modalCotizacion');
+    modal.classList.add('hidden');
+    modal.style.display = 'none';
+    currentCotizacion = null;
+}
+
+function volverAlDashboard() {
+    window.location.href = '/admin/dashboard';
+}
+
+async function guardarCotizacion(e) {
+    e.preventDefault();
+    
+    // Recopilar datos del formulario
+    const items = [];
+    const itemRows = document.querySelectorAll('#itemsContainer .item-row');
+    
+    itemRows.forEach((row, index) => {
+        const nombre = row.querySelector('.item-nombre').value.trim();
+        const descripcion = row.querySelector('.item-descripcion').value.trim();
+        const cantidad = parseInt(row.querySelector('.item-cantidad').value);
+        const precio_unitario = parseFloat(row.querySelector('.item-precio').value);
+        const descuento_porcentaje = parseFloat(row.querySelector('.item-descuento').value) || 0;
+        
+        if (nombre && cantidad > 0 && precio_unitario >= 0) {
+            items.push({
+                tipo: 'servicio', // Por ahora todos son servicios
+                nombre,
+                descripcion,
+                cantidad,
+                precio_unitario,
+                descuento_porcentaje
+            });
+        }
+    });
+    
+    if (items.length === 0) {
+        AppUtils.mostrarMensaje('Debe agregar al menos un item válido', 'error');
+        return;
+    }
+    
+    const cotizacionData = {
+        cliente_nombre: document.getElementById('clienteNombre').value.trim(),
+        cliente_email: document.getElementById('clienteEmail').value.trim(),
+        cliente_telefono: document.getElementById('clienteTelefono').value.trim(),
+        cliente_empresa: document.getElementById('clienteEmpresa').value.trim(),
+        titulo: document.getElementById('cotizacionTitulo').value.trim(),
+        descripcion: document.getElementById('cotizacionDescripcion').value.trim(),
+        validez_dias: parseInt(document.getElementById('validezDias').value) || 30,
+        descuento_porcentaje: parseFloat(document.getElementById('descuentoGeneral').value) || 0,
+        impuesto_porcentaje: parseFloat(document.getElementById('impuestoPorcentaje').value) || 16,
+        terminos_condiciones: document.getElementById('terminosCondiciones').value.trim(),
+        notas_internas: document.getElementById('notasInternas').value.trim(),
+        items
+    };
+    
+    try {
+        const token = localStorage.getItem('empleadoToken');
+        const cotizacionId = document.getElementById('cotizacionId').value;
+        const isEdit = !!cotizacionId;
+        
+        const response = await fetch(isEdit ? `/api/cotizaciones/${cotizacionId}` : '/api/cotizaciones', {
+            method: isEdit ? 'PUT' : 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(cotizacionData)
+        });
+        
+        if (response.ok) {
+            const result = await response.json();
+            AppUtils.mostrarMensaje(
+                isEdit ? 'Cotización actualizada exitosamente' : 'Cotización creada exitosamente',
+                'success'
+            );
+            cerrarModalCotizacion();
+            loadCotizaciones();
+            loadEstadisticas();
+        } else {
+            const error = await response.json();
+            AppUtils.mostrarMensaje(error.error || 'Error al guardar cotización', 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        AppUtils.mostrarMensaje('Error de conexión', 'error');
+    }
+}
+
+// Funciones placeholder para las demás acciones
+function verCotizacion(id) { AppUtils.mostrarMensaje('Vista detallada en desarrollo', 'info'); }
+function editarCotizacion(id) { AppUtils.mostrarMensaje('Edición en desarrollo', 'info'); }
+function duplicarCotizacion(id) { AppUtils.mostrarMensaje('Duplicar en desarrollo', 'info'); }
+function generarPDF(id) { AppUtils.mostrarMensaje('PDF en desarrollo', 'info'); }
+function enviarCotizacion(id) { AppUtils.mostrarMensaje('Envío en desarrollo', 'info'); }
+function cambiarEstado(id, estado) { AppUtils.mostrarMensaje('Cambio de estado en desarrollo', 'info'); }
+
+// Funciones para datos de vehículos (mantenemos compatibilidad)
 async function cargarMarcas() {
     const marcaSelect = document.getElementById('marca');
     

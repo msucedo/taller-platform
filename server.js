@@ -21,7 +21,8 @@ app.use(helmet({
         directives: {
             defaultSrc: ["'self'"],
             styleSrc: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com"],
-            scriptSrc: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com"],
+            scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://cdnjs.cloudflare.com"],
+            scriptSrcAttr: ["'unsafe-inline'"], // Permitir onclick y similares
             imgSrc: ["'self'", "data:", "https:", "via.placeholder.com"],
             fontSrc: ["'self'", "https:"],
         },
@@ -1228,6 +1229,372 @@ app.delete('/api/inventario/eliminar-imagen/:filename', requireAuth, requireAdmi
             res.json({ mensaje: 'Imagen eliminada correctamente' });
         }
     });
+});
+
+// ====== API COTIZACIONES ======
+
+// Generar número de cotización
+function generateCotizacionNumber() {
+    const fecha = new Date();
+    const year = fecha.getFullYear().toString().slice(-2);
+    const month = String(fecha.getMonth() + 1).padStart(2, '0');
+    const timestamp = Date.now().toString().slice(-6);
+    return `COT-${year}${month}-${timestamp}`;
+}
+
+// Obtener estadísticas de cotizaciones
+app.get('/api/cotizaciones/estadisticas', requireAuth, (req, res) => {
+    const db = new sqlite3.Database(dbPath);
+    
+    const queries = [
+        'SELECT COUNT(*) as total FROM cotizaciones',
+        'SELECT COUNT(*) as borradores FROM cotizaciones WHERE estado = "borrador"',
+        'SELECT COUNT(*) as pendientes FROM cotizaciones WHERE estado = "pendiente"',
+        'SELECT COUNT(*) as aprobadas FROM cotizaciones WHERE estado = "aprobada"',
+        'SELECT COUNT(*) as rechazadas FROM cotizaciones WHERE estado = "rechazada"',
+        'SELECT SUM(total) as valor_total FROM cotizaciones WHERE estado = "aprobada"',
+        'SELECT AVG(total) as valor_promedio FROM cotizaciones'
+    ];
+    
+    let completedQueries = 0;
+    const stats = {};
+    
+    queries.forEach((query, index) => {
+        db.get(query, (err, row) => {
+            if (err) {
+                console.error('Error en estadística:', err);
+            } else {
+                Object.assign(stats, row);
+            }
+            
+            completedQueries++;
+            if (completedQueries === queries.length) {
+                res.json(stats);
+                db.close();
+            }
+        });
+    });
+});
+
+// Obtener todas las cotizaciones
+app.get('/api/cotizaciones', requireAuth, (req, res) => {
+    const db = new sqlite3.Database(dbPath);
+    
+    const query = `
+        SELECT c.*, u.nombre as usuario_nombre
+        FROM cotizaciones c
+        LEFT JOIN usuarios u ON c.usuario_creador = u.id
+        ORDER BY c.fecha_creacion DESC
+    `;
+    
+    db.all(query, (err, rows) => {
+        if (err) {
+            console.error('Error al obtener cotizaciones:', err);
+            return res.status(500).json({ error: 'Error interno del servidor' });
+        }
+        res.json(rows);
+    });
+    
+    db.close();
+});
+
+// Obtener cotización por ID con items
+app.get('/api/cotizaciones/:id', requireAuth, (req, res) => {
+    const db = new sqlite3.Database(dbPath);
+    const cotizacionId = req.params.id;
+    
+    // Obtener cotización
+    db.get(`
+        SELECT c.*, u.nombre as usuario_nombre
+        FROM cotizaciones c
+        LEFT JOIN usuarios u ON c.usuario_creador = u.id
+        WHERE c.id = ?
+    `, [cotizacionId], (err, cotizacion) => {
+        if (err) {
+            console.error('Error al obtener cotización:', err);
+            return res.status(500).json({ error: 'Error interno del servidor' });
+        }
+        
+        if (!cotizacion) {
+            return res.status(404).json({ error: 'Cotización no encontrada' });
+        }
+        
+        // Obtener items de la cotización
+        db.all(`
+            SELECT ci.*, p.marca, p.modelo, p.medida
+            FROM cotizacion_items ci
+            LEFT JOIN productos_llantas p ON ci.producto_id = p.id
+            WHERE ci.cotizacion_id = ?
+            ORDER BY ci.orden, ci.id
+        `, [cotizacionId], (err, items) => {
+            if (err) {
+                console.error('Error al obtener items:', err);
+                return res.status(500).json({ error: 'Error interno del servidor' });
+            }
+            
+            cotizacion.items = items;
+            res.json(cotizacion);
+        });
+    });
+    
+    db.close();
+});
+
+// Crear nueva cotización
+app.post('/api/cotizaciones', [
+    requireAuth,
+    body('cliente_nombre').notEmpty().withMessage('Nombre del cliente es requerido'),
+    body('cliente_email').isEmail().withMessage('Email válido es requerido'),
+    body('titulo').notEmpty().withMessage('Título es requerido'),
+    body('items').isArray({ min: 1 }).withMessage('Debe incluir al menos un item')
+], handleValidationErrors, (req, res) => {
+    const db = new sqlite3.Database(dbPath);
+    
+    const {
+        solicitud_id,
+        cliente_nombre,
+        cliente_email,
+        cliente_telefono,
+        cliente_empresa,
+        titulo,
+        descripcion,
+        validez_dias = 30,
+        descuento_porcentaje = 0,
+        impuesto_porcentaje = 16,
+        terminos_condiciones,
+        notas_internas,
+        items
+    } = req.body;
+    
+    const numero = generateCotizacionNumber();
+    const fecha_expiracion = new Date();
+    fecha_expiracion.setDate(fecha_expiracion.getDate() + parseInt(validez_dias));
+    
+    db.serialize(() => {
+        db.run('BEGIN TRANSACTION');
+        
+        // Insertar cotización
+        db.run(`
+            INSERT INTO cotizaciones (
+                numero, solicitud_id, cliente_nombre, cliente_email, cliente_telefono,
+                cliente_empresa, titulo, descripcion, validez_dias, fecha_expiracion,
+                descuento_porcentaje, impuesto_porcentaje, terminos_condiciones,
+                notas_internas, usuario_creador
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `, [
+            numero, solicitud_id, cliente_nombre, cliente_email, cliente_telefono,
+            cliente_empresa, titulo, descripcion, validez_dias, fecha_expiracion,
+            descuento_porcentaje, impuesto_porcentaje, terminos_condiciones,
+            notas_internas, req.user.id
+        ], function(err) {
+            if (err) {
+                console.error('Error al crear cotización:', err);
+                db.run('ROLLBACK');
+                db.close();
+                return res.status(500).json({ error: 'Error interno del servidor' });
+            }
+            
+            const cotizacionId = this.lastID;
+            let subtotal = 0;
+            
+            // Insertar items
+            const stmt = db.prepare(`
+                INSERT INTO cotizacion_items (
+                    cotizacion_id, tipo, producto_id, codigo, nombre, descripcion,
+                    cantidad, precio_unitario, descuento_porcentaje, descuento_monto,
+                    subtotal, orden
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `);
+            
+            let itemsProcessed = 0;
+            let hasError = false;
+            
+            items.forEach((item, index) => {
+                const itemDescuentoMonto = (item.precio_unitario * item.cantidad * (item.descuento_porcentaje || 0)) / 100;
+                const itemSubtotal = (item.precio_unitario * item.cantidad) - itemDescuentoMonto;
+                subtotal += itemSubtotal;
+                
+                stmt.run([
+                    cotizacionId, item.tipo || 'servicio', item.producto_id || null, item.codigo || null,
+                    item.nombre, item.descripcion || '', parseInt(item.cantidad), parseFloat(item.precio_unitario),
+                    parseFloat(item.descuento_porcentaje) || 0, itemDescuentoMonto, itemSubtotal, index
+                ], function(err) {
+                    if (err && !hasError) {
+                        hasError = true;
+                        console.error('Error al insertar item:', err);
+                        stmt.finalize();
+                        db.run('ROLLBACK');
+                        db.close();
+                        return res.status(500).json({ error: 'Error al procesar items de cotización' });
+                    }
+                    
+                    itemsProcessed++;
+                    if (itemsProcessed === items.length && !hasError) {
+                        finalizeCotizacion();
+                    }
+                });
+            });
+            
+            function finalizeCotizacion() {
+                stmt.finalize();
+                
+                // Calcular totales
+                const descuento_monto = (subtotal * parseFloat(descuento_porcentaje)) / 100;
+                const subtotal_con_descuento = subtotal - descuento_monto;
+                const impuesto_monto = (subtotal_con_descuento * parseFloat(impuesto_porcentaje)) / 100;
+                const total = subtotal_con_descuento + impuesto_monto;
+            
+            // Actualizar totales
+            db.run(`
+                UPDATE cotizaciones 
+                SET subtotal = ?, descuento_monto = ?, impuesto_monto = ?, total = ?
+                WHERE id = ?
+            `, [subtotal, descuento_monto, impuesto_monto, total, cotizacionId], (err) => {
+                if (err) {
+                    console.error('Error al actualizar totales:', err);
+                    db.run('ROLLBACK');
+                    db.close();
+                    return res.status(500).json({ error: 'Error interno del servidor' });
+                }
+                
+                // Registrar en historial
+                db.run(`
+                    INSERT INTO cotizacion_historial (cotizacion_id, estado_nuevo, comentario, usuario_id)
+                    VALUES (?, 'borrador', 'Cotización creada', ?)
+                `, [cotizacionId, req.user.id], (err) => {
+                    if (err) {
+                        console.error('Error al registrar historial:', err);
+                        db.run('ROLLBACK');
+                        db.close();
+                        return res.status(500).json({ error: 'Error interno del servidor' });
+                    }
+                    
+                    db.run('COMMIT');
+                    res.status(201).json({
+                        message: 'Cotización creada exitosamente',
+                        cotizacion_id: cotizacionId,
+                        numero: numero
+                    });
+                    db.close();
+                });
+            });
+            }
+        });
+    });
+});
+
+// Actualizar cotización
+app.put('/api/cotizaciones/:id', [
+    requireAuth,
+    body('cliente_nombre').optional().notEmpty(),
+    body('cliente_email').optional().isEmail(),
+    body('titulo').optional().notEmpty()
+], handleValidationErrors, (req, res) => {
+    const db = new sqlite3.Database(dbPath);
+    const cotizacionId = req.params.id;
+    
+    // Verificar que la cotización existe y está en borrador
+    db.get('SELECT * FROM cotizaciones WHERE id = ? AND estado = "borrador"', [cotizacionId], (err, cotizacion) => {
+        if (err) {
+            console.error('Error al verificar cotización:', err);
+            return res.status(500).json({ error: 'Error interno del servidor' });
+        }
+        
+        if (!cotizacion) {
+            return res.status(404).json({ error: 'Cotización no encontrada o no se puede modificar' });
+        }
+        
+        const updates = [];
+        const values = [];
+        
+        Object.keys(req.body).forEach(key => {
+            if (['items'].includes(key)) return; // Manejar items por separado
+            updates.push(`${key} = ?`);
+            values.push(req.body[key]);
+        });
+        
+        if (updates.length === 0) {
+            return res.status(400).json({ error: 'No hay campos para actualizar' });
+        }
+        
+        values.push(cotizacionId);
+        
+        db.run(`
+            UPDATE cotizaciones 
+            SET ${updates.join(', ')}, fecha_actualizacion = CURRENT_TIMESTAMP
+            WHERE id = ?
+        `, values, (err) => {
+            if (err) {
+                console.error('Error al actualizar cotización:', err);
+                return res.status(500).json({ error: 'Error interno del servidor' });
+            }
+            
+            res.json({ message: 'Cotización actualizada exitosamente' });
+        });
+    });
+    
+    db.close();
+});
+
+// Cambiar estado de cotización
+app.put('/api/cotizaciones/:id/estado', [
+    requireAuth,
+    body('estado').isIn(['borrador', 'pendiente', 'aprobada', 'rechazada', 'expirada']),
+    body('comentario').optional()
+], handleValidationErrors, (req, res) => {
+    const db = new sqlite3.Database(dbPath);
+    const cotizacionId = req.params.id;
+    const { estado, comentario } = req.body;
+    
+    db.get('SELECT estado FROM cotizaciones WHERE id = ?', [cotizacionId], (err, cotizacion) => {
+        if (err) {
+            console.error('Error al verificar cotización:', err);
+            return res.status(500).json({ error: 'Error interno del servidor' });
+        }
+        
+        if (!cotizacion) {
+            return res.status(404).json({ error: 'Cotización no encontrada' });
+        }
+        
+        const estadoAnterior = cotizacion.estado;
+        
+        db.serialize(() => {
+            db.run('BEGIN TRANSACTION');
+            
+            // Actualizar estado
+            const fechaField = estado === 'pendiente' ? 'fecha_enviado' :
+                             estado === 'aprobada' ? 'fecha_aprobacion' : null;
+            
+            const updateQuery = fechaField ? 
+                `UPDATE cotizaciones SET estado = ?, ${fechaField} = CURRENT_TIMESTAMP, fecha_actualizacion = CURRENT_TIMESTAMP WHERE id = ?` :
+                `UPDATE cotizaciones SET estado = ?, fecha_actualizacion = CURRENT_TIMESTAMP WHERE id = ?`;
+            
+            db.run(updateQuery, [estado, cotizacionId], (err) => {
+                if (err) {
+                    console.error('Error al actualizar estado:', err);
+                    db.run('ROLLBACK');
+                    return res.status(500).json({ error: 'Error interno del servidor' });
+                }
+                
+                // Registrar en historial
+                db.run(`
+                    INSERT INTO cotizacion_historial (cotizacion_id, estado_anterior, estado_nuevo, comentario, usuario_id)
+                    VALUES (?, ?, ?, ?, ?)
+                `, [cotizacionId, estadoAnterior, estado, comentario, req.user.id], (err) => {
+                    if (err) {
+                        console.error('Error al registrar historial:', err);
+                        db.run('ROLLBACK');
+                        return res.status(500).json({ error: 'Error interno del servidor' });
+                    }
+                    
+                    db.run('COMMIT');
+                    res.json({ message: 'Estado actualizado exitosamente' });
+                });
+            });
+        });
+    });
+    
+    db.close();
 });
 
 app.get('/api/debug/admin', (req, res) => {
