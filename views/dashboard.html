@@ -18,15 +18,15 @@
         <main>
             <div class="dashboard-controls">
                 <div class="actions-group">
-                    <button onclick="loadSolicitudes()" class="btn-refresh">Actualizar</button>
+                    <button onclick="loadSolicitudes()" class="btn btn-primary">Actualizar</button>
                     <div class="export-buttons">
-                        <button onclick="exportarPDF()" class="btn-export btn-pdf">📄 PDF</button>
-                        <button onclick="exportarExcel()" class="btn-export btn-excel">📊 Excel</button>
+                        <button onclick="exportarPDF()" class="btn btn-danger btn-sm">📄 PDF</button>
+                        <button onclick="exportarExcel()" class="btn btn-success btn-sm">📊 Excel</button>
                     </div>
                 </div>
                 <div class="search-container">
                     <input type="text" id="buscadorSolicitudes" placeholder="Buscar por proveedor, descripción o email..." class="search-input">
-                    <button onclick="limpiarBusqueda()" class="btn-clear-search">Limpiar</button>
+                    <button onclick="limpiarBusqueda()" class="btn btn-secondary btn-sm">Limpiar</button>
                 </div>
                 <div class="filter-controls">
                     <select id="filtroEstado">
@@ -78,8 +78,8 @@
                 </div>
 
                 <div class="form-actions">
-                    <button type="submit" class="btn-submit">Guardar</button>
-                    <button type="button" onclick="cerrarModal()" class="btn-cancel">Cancelar</button>
+                    <button type="submit" class="btn btn-success">Guardar</button>
+                    <button type="button" onclick="cerrarModal()" class="btn btn-secondary">Cancelar</button>
                 </div>
             </form>
         </div>

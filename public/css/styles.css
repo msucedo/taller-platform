@@ -342,17 +342,43 @@ main {
     gap: 8px;
 }
 
-/* Export buttons usando el nuevo sistema */
+/* Legacy button classes - implementación completa para compatibilidad */
 .btn-export {
-    /* Extender del sistema base */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border: none;
+    border-radius: var(--border-radius-sm);
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--transition-base);
+    min-height: var(--btn-height-sm);
+    box-shadow: var(--shadow-sm);
+}
+
+.btn-export:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-base);
 }
 
 .btn-pdf {
-    /* Usar la clase danger para PDF (rojo) */
+    background: var(--color-danger);
+    color: var(--color-white);
+}
+
+.btn-pdf:hover {
+    background: var(--color-danger-hover);
 }
 
 .btn-excel {
-    /* Usar la clase success para Excel (verde) */
+    background: var(--color-success);
+    color: var(--color-white);
+}
+
+.btn-excel:hover {
+    background: var(--color-success-hover);
 }
 
 .search-container {
@@ -375,13 +401,45 @@ main {
     border-color: #3498db;
 }
 
-/* Botones usando el nuevo sistema - solo definir overrides específicos si es necesario */
+/* Legacy button classes - implementación completa */
 .btn-clear-search {
-    /* Extiende de .btn .btn-secondary */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    background: var(--color-secondary);
+    color: var(--color-white);
+    border: none;
+    border-radius: var(--border-radius-sm);
+    font-size: var(--font-size-sm);
+    cursor: pointer;
+    transition: all var(--transition-base);
+    min-height: var(--btn-height-sm);
+}
+
+.btn-clear-search:hover {
+    background: var(--color-secondary-hover);
+    transform: translateY(-1px);
 }
 
 .btn-refresh {
-    /* Extiende de .btn .btn-primary */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-sm) var(--spacing-base);
+    background: var(--color-primary);
+    color: var(--color-white);
+    border: none;
+    border-radius: var(--border-radius-sm);
+    font-size: var(--font-size-base);
+    cursor: pointer;
+    transition: all var(--transition-base);
+    min-height: var(--btn-height-base);
+}
+
+.btn-refresh:hover {
+    background: var(--color-primary-hover);
+    transform: translateY(-1px);
 }
 
 .filter-controls {
@@ -395,25 +453,36 @@ main {
     border-radius: 4px;
 }
 
-/* Legacy card classes - redirigidas al nuevo sistema */
+/* Legacy card classes - implementación completa para compatibilidad */
 .solicitud-card {
-    /* Usar .card base */
+    background: var(--color-white);
+    border-radius: var(--border-radius-base);
+    box-shadow: var(--shadow-base);
+    padding: var(--card-padding);
+    margin-bottom: var(--card-gap);
+    transition: all var(--transition-base);
+    overflow: hidden;
+}
+
+.solicitud-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
 }
 
 .solicitud-card.pendiente {
-    /* Usar .card .card-pendiente */
+    border-left: 4px solid var(--color-warning);
 }
 
 .solicitud-card.en_proceso {
-    /* Usar .card .card-en_proceso */
+    border-left: 4px solid var(--color-primary);
 }
 
 .solicitud-card.completado {
-    /* Usar .card .card-completado */
+    border-left: 4px solid var(--color-success);
 }
 
 .solicitud-card.rechazado {
-    /* Usar .card .card-rechazado */
+    border-left: 4px solid var(--color-danger);
 }
 
 .solicitud-header {
@@ -629,6 +698,109 @@ main {
 @keyframes pulse {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.7; }
+}
+
+/* Legacy action button classes adicionales */
+.btn-edit {
+    background: var(--color-warning);
+    color: var(--color-white);
+    padding: var(--spacing-xs) var(--spacing-base);
+    border: none;
+    border-radius: var(--border-radius-sm);
+    font-size: var(--font-size-sm);
+    cursor: pointer;
+    transition: all var(--transition-base);
+    min-height: var(--btn-height-base);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-edit:hover {
+    background: var(--color-warning-hover);
+    transform: translateY(-1px);
+}
+
+.btn-assign {
+    background: var(--color-info);
+    color: var(--color-white);
+    padding: var(--spacing-xs) var(--spacing-base);
+    border: none;
+    border-radius: var(--border-radius-sm);
+    font-size: var(--font-size-sm);
+    cursor: pointer;
+    transition: all var(--transition-base);
+    min-height: var(--btn-height-base);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-assign:hover {
+    background: var(--color-info-hover);
+    transform: translateY(-1px);
+}
+
+.btn-view {
+    background: var(--color-primary);
+    color: var(--color-white);
+    padding: var(--spacing-xs) var(--spacing-base);
+    border: none;
+    border-radius: var(--border-radius-sm);
+    font-size: var(--font-size-sm);
+    cursor: pointer;
+    transition: all var(--transition-base);
+    min-height: var(--btn-height-base);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-view:hover {
+    background: var(--color-primary-hover);
+    transform: translateY(-1px);
+}
+
+.btn-logout {
+    background: rgba(255,255,255,0.2);
+    color: var(--color-white);
+    border: 2px solid rgba(255,255,255,0.3);
+    padding: var(--spacing-xs) var(--spacing-base);
+    border-radius: var(--border-radius-sm);
+    font-size: var(--font-size-sm);
+    cursor: pointer;
+    transition: all var(--transition-base);
+    min-height: var(--btn-height-base);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-logout:hover {
+    background: rgba(255,255,255,0.3);
+    border-color: rgba(255,255,255,0.5);
+    transform: translateY(-1px);
+}
+
+.btn-detalle {
+    background: var(--color-primary);
+    color: var(--color-white);
+    padding: var(--spacing-xs) var(--spacing-base);
+    border: none;
+    border-radius: var(--border-radius-sm);
+    font-size: var(--font-size-sm);
+    cursor: pointer;
+    transition: all var(--transition-base);
+    min-height: var(--btn-height-base);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-detalle:hover {
+    background: var(--color-primary-hover);
+    transform: translateY(-1px);
 }
 
 /* Stats card specific */

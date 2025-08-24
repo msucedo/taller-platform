@@ -35,7 +35,7 @@
                     <div class="section-header">
                         <h2>Mis Solicitudes Asignadas</h2>
                         <div class="section-actions">
-                            <button onclick="loadMisSolicitudes()" class="btn-refresh">Actualizar</button>
+                            <button onclick="loadMisSolicitudes()" class="btn btn-primary">Actualizar</button>
                         </div>
                     </div>
 
@@ -71,7 +71,7 @@
                     <div class="section-header">
                         <h2>Todas las Solicitudes</h2>
                         <div class="section-actions">
-                            <button onclick="loadTodasSolicitudes()" class="btn-refresh">Actualizar</button>
+                            <button onclick="loadTodasSolicitudes()" class="btn btn-primary">Actualizar</button>
                         </div>
                     </div>
 
@@ -79,7 +79,7 @@
                     <div class="empleado-controls">
                         <div class="search-container">
                             <input type="text" id="buscadorEmpleado" placeholder="Buscar solicitudes..." class="search-input">
-                            <button onclick="limpiarBusquedaEmpleado()" class="btn-clear-search">Limpiar</button>
+                            <button onclick="limpiarBusquedaEmpleado()" class="btn btn-secondary btn-sm">Limpiar</button>
                         </div>
                         <div class="filter-controls">
                             <select id="filtroEstadoEmpleado">
@@ -118,7 +118,7 @@
                                 <p><strong>Rol:</strong> <span id="perfilRol">-</span></p>
                                 <p><strong>Fecha de Ingreso:</strong> <span id="perfilFecha">-</span></p>
                             </div>
-                            <button onclick="mostrarCambiarPassword()" class="btn-secondary">Cambiar Contraseña</button>
+                            <button onclick="mostrarCambiarPassword()" class="btn btn-secondary">Cambiar Contraseña</button>
                         </div>
 
                         <div class="estadisticas-personales">
@@ -171,8 +171,8 @@
                     </div>
 
                     <div class="form-actions">
-                        <button type="submit" class="btn-submit">Guardar</button>
-                        <button type="button" onclick="cerrarModal('modalEditarSolicitud')" class="btn-cancel">Cancelar</button>
+                        <button type="submit" class="btn btn-success">Guardar</button>
+                        <button type="button" onclick="cerrarModal('modalEditarSolicitud')" class="btn btn-secondary">Cancelar</button>
                     </div>
                 </form>
             </div>
@@ -196,8 +196,8 @@
                         <input type="password" id="confirmPassword" required>
                     </div>
                     <div class="form-actions">
-                        <button type="submit" class="btn-submit">Cambiar</button>
-                        <button type="button" onclick="cerrarModal('modalPassword')" class="btn-cancel">Cancelar</button>
+                        <button type="submit" class="btn btn-success">Cambiar</button>
+                        <button type="button" onclick="cerrarModal('modalPassword')" class="btn btn-secondary">Cancelar</button>
                     </div>
                 </form>
             </div>

@@ -18,8 +18,8 @@
                 <div class="dashboard-header">
                     <h2>📋 Mis Solicitudes</h2>
                     <div class="dashboard-actions">
-                        <a href="/" class="btn-primary">+ Nueva Solicitud</a>
-                        <button onclick="cerrarSesion()" class="btn-secondary">Cerrar Sesión</button>
+                        <a href="/" class="btn btn-primary">+ Nueva Solicitud</a>
+                        <button onclick="cerrarSesion()" class="btn btn-secondary">Cerrar Sesión</button>
                     </div>
                 </div>
 
@@ -130,25 +130,25 @@
                     <div class="no-data">
                         <h3>No hay solicitudes</h3>
                         <p>Aún no has enviado solicitudes al taller.</p>
-                        <a href="/" class="btn-primary">Crear Primera Solicitud</a>
+                        <a href="/" class="btn btn-primary">Crear Primera Solicitud</a>
                     </div>
                 `;
                 return;
             }
             
             const html = solicitudesList.map(solicitud => `
-                <div class="solicitud-card-proveedor ${solicitud.estado}">
-                    <div class="solicitud-header-proveedor">
+                <div class="card card-${solicitud.estado}">
+                    <div class="card-header">
                         <div class="solicitud-info">
-                            <h3>${solicitud.tipo_servicio}</h3>
-                            <span class="tracker-code">📋 ${solicitud.tracker_code}</span>
+                            <h3 class="card-title">${solicitud.tipo_servicio}</h3>
+                            <span class="card-subtitle">📋 ${solicitud.tracker_code}</span>
                         </div>
-                        <span class="estado-badge ${solicitud.estado}">
+                        <span class="badge badge-${solicitud.estado}">
                             ${getEstadoIcon(solicitud.estado)} ${solicitud.estado.replace('_', ' ').toUpperCase()}
                         </span>
                     </div>
                     
-                    <div class="solicitud-body-proveedor">
+                    <div class="card-body">
                         <div class="solicitud-meta">
                             <span><strong>Urgencia:</strong> ${solicitud.urgencia}</span>
                             <span><strong>Fecha:</strong> ${formatDate(solicitud.fecha_solicitud)}</span>
@@ -168,8 +168,8 @@
                         ` : ''}
                     </div>
                     
-                    <div class="solicitud-actions-proveedor">
-                        <button onclick="verDetalle('${solicitud.tracker_code}')" class="btn-detalle">
+                    <div class="card-actions">
+                        <button onclick="verDetalle('${solicitud.tracker_code}')" class="btn btn-primary btn-sm">
                             Ver Detalle Completo
                         </button>
                         ${solicitud.estado === 'pendiente' ? `
