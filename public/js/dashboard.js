@@ -2,6 +2,7 @@ let solicitudes = [];
 let solicitudesFiltradas = [];
 
 document.addEventListener('DOMContentLoaded', function() {
+    AppUtils.cargarVersion();
     loadSolicitudes();
     
     const filtroEstado = document.getElementById('filtroEstado');
@@ -67,7 +68,7 @@ function mostrarSolicitudes(solicitudesList) {
                 ${solicitud.proveedor_telefono ? `<p><strong>Teléfono:</strong> ${solicitud.proveedor_telefono}</p>` : ''}
                 <p><strong>Urgencia:</strong> ${solicitud.urgencia}</p>
                 <p><strong>Descripción:</strong> ${solicitud.descripcion}</p>
-                <p><strong>Fecha:</strong> ${formatDate(solicitud.fecha_solicitud)}</p>
+                <p><strong>Fecha:</strong> ${AppUtils.formatearFecha(solicitud.fecha_solicitud)}</p>
                 ${solicitud.notas_taller ? `<p><strong>Notas:</strong> ${solicitud.notas_taller}</p>` : ''}
             </div>
             <div class="solicitud-actions">
@@ -142,11 +143,11 @@ async function guardarEdicion(e) {
             cerrarModal();
             loadSolicitudes();
         } else {
-            alert('Error al actualizar la solicitud');
+            AppUtils.mostrarMensaje('Error al actualizar la solicitud', 'error');
         }
     } catch (error) {
         console.error('Error:', error);
-        alert('Error de conexión');
+        AppUtils.mostrarMensaje('Error de conexión', 'error');
     }
 }
 
@@ -157,14 +158,10 @@ function limpiarBusqueda() {
     filtrarSolicitudes();
 }
 
-function formatDate(dateString) {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('es-ES') + ' ' + date.toLocaleTimeString('es-ES');
-}
 
 function exportarPDF() {
     if (solicitudesFiltradas.length === 0) {
-        alert('No hay solicitudes para exportar');
+        AppUtils.mostrarMensaje('No hay solicitudes para exportar', 'warning');
         return;
     }
 
@@ -179,7 +176,7 @@ function exportarPDF() {
     // Título
     doc.setFontSize(18);
     doc.setFont(undefined, 'bold');
-    doc.text('Reporte de Solicitudes - Taller Mecánico', margin, yPosition);
+    doc.text('Reporte de Solicitudes - Llantera', margin, yPosition);
     
     yPosition += 10;
     doc.setFontSize(12);
@@ -219,7 +216,7 @@ function exportarPDF() {
             `Teléfono: ${solicitud.proveedor_telefono || 'No especificado'}`,
             `Servicio: ${solicitud.tipo_servicio}`,
             `Urgencia: ${solicitud.urgencia}`,
-            `Fecha: ${formatDate(solicitud.fecha_solicitud)}`,
+            `Fecha: ${AppUtils.formatearFecha(solicitud.fecha_solicitud)}`,
             `Descripción: ${solicitud.descripcion}`,
         ];
         
@@ -247,7 +244,7 @@ function exportarPDF() {
 
 function exportarExcel() {
     if (solicitudesFiltradas.length === 0) {
-        alert('No hay solicitudes para exportar');
+        AppUtils.mostrarMensaje('No hay solicitudes para exportar', 'warning');
         return;
     }
     
@@ -261,7 +258,7 @@ function exportarExcel() {
         'Descripción': solicitud.descripcion,
         'Urgencia': solicitud.urgencia,
         'Estado': solicitud.estado,
-        'Fecha Solicitud': formatDate(solicitud.fecha_solicitud),
+        'Fecha Solicitud': AppUtils.formatearFecha(solicitud.fecha_solicitud),
         'Notas Taller': solicitud.notas_taller || ''
     }));
     
@@ -301,3 +298,4 @@ function getEstadoColor(estado) {
     };
     return colores[estado] || { r: 0, g: 0, b: 0 };
 }
+

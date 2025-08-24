@@ -4,6 +4,7 @@ let empleadoData = {};
 let currentTab = 'mis-solicitudes';
 
 document.addEventListener('DOMContentLoaded', function() {
+    AppUtils.cargarVersion();
     verificarAutenticacion();
     
     // Event listeners para filtros
@@ -132,7 +133,7 @@ async function loadMisSolicitudes() {
         }
     } catch (error) {
         console.error('Error:', error);
-        showMessage('Error al cargar solicitudes asignadas', 'error');
+        AppUtils.mostrarMensaje('Error al cargar solicitudes asignadas', 'error');
     }
 }
 
@@ -145,11 +146,11 @@ async function loadTodasSolicitudes() {
             todasSolicitudes = await response.json();
             mostrarTodasSolicitudes();
         } else {
-            showMessage('Error al cargar todas las solicitudes', 'error');
+            AppUtils.mostrarMensaje('Error al cargar todas las solicitudes', 'error');
         }
     } catch (error) {
         console.error('Error:', error);
-        showMessage('Error de conexión', 'error');
+        AppUtils.mostrarMensaje('Error de conexión', 'error');
     }
 }
 
@@ -197,8 +198,8 @@ function mostrarMisSolicitudes() {
                     <p><strong>Email:</strong> ${solicitud.proveedor_email}</p>
                     ${solicitud.proveedor_telefono ? `<p><strong>Teléfono:</strong> ${solicitud.proveedor_telefono}</p>` : ''}
                     <p><strong>Descripción:</strong> ${solicitud.descripcion}</p>
-                    <p><strong>Fecha Solicitud:</strong> ${formatDate(solicitud.fecha_solicitud)}</p>
-                    ${solicitud.fecha_preferida ? `<p><strong>Fecha Preferida:</strong> ${formatDate(solicitud.fecha_preferida)}</p>` : ''}
+                    <p><strong>Fecha Solicitud:</strong> ${AppUtils.formatearFecha(solicitud.fecha_solicitud)}</p>
+                    ${solicitud.fecha_preferida ? `<p><strong>Fecha Preferida:</strong> ${AppUtils.formatearFecha(solicitud.fecha_preferida)}</p>` : ''}
                     ${solicitud.notas_taller ? `<p><strong>Mis Notas:</strong> ${solicitud.notas_taller}</p>` : ''}
                 </div>
             </div>
@@ -236,7 +237,7 @@ function mostrarTodasSolicitudes() {
             </div>
             <div class="solicitud-summary">
                 <p><strong>Descripción:</strong> ${solicitud.descripcion.substring(0, 100)}${solicitud.descripcion.length > 100 ? '...' : ''}</p>
-                <p><strong>Fecha:</strong> ${formatDate(solicitud.fecha_solicitud)}</p>
+                <p><strong>Fecha:</strong> ${AppUtils.formatearFecha(solicitud.fecha_solicitud)}</p>
             </div>
             <div class="solicitud-actions-simple">
                 <button onclick="verDetalleTracker('${solicitud.tracker_code}')" class="btn-view-small">Ver Detalle</button>
@@ -292,7 +293,7 @@ function filtrarTodasSolicitudes() {
             </div>
             <div class="solicitud-summary">
                 <p><strong>Descripción:</strong> ${solicitud.descripcion.substring(0, 100)}${solicitud.descripcion.length > 100 ? '...' : ''}</p>
-                <p><strong>Fecha:</strong> ${formatDate(solicitud.fecha_solicitud)}</p>
+                <p><strong>Fecha:</strong> ${AppUtils.formatearFecha(solicitud.fecha_solicitud)}</p>
             </div>
             <div class="solicitud-actions-simple">
                 <button onclick="verDetalleTracker('${solicitud.tracker_code}')" class="btn-view-small">Ver Detalle</button>
@@ -351,13 +352,13 @@ async function guardarEdicion(e) {
             if (currentTab === 'todas-solicitudes') {
                 loadTodasSolicitudes();
             }
-            showMessage('Solicitud actualizada exitosamente', 'success');
+            AppUtils.mostrarMensaje('Solicitud actualizada exitosamente', 'success');
         } else {
-            showMessage('Error al actualizar la solicitud', 'error');
+            AppUtils.mostrarMensaje('Error al actualizar la solicitud', 'error');
         }
     } catch (error) {
         console.error('Error:', error);
-        showMessage('Error de conexión', 'error');
+        AppUtils.mostrarMensaje('Error de conexión', 'error');
     }
 }
 
@@ -366,7 +367,7 @@ function verDetalleTracker(trackerCode) {
 }
 
 function contactarProveedor(email) {
-    window.open(`mailto:${email}?subject=Consulta sobre su solicitud - Taller Mecánico`, '_blank');
+    window.open(`mailto:${email}?subject=Consulta sobre su solicitud - Llantera`, '_blank');
 }
 
 function mostrarCambiarPassword() {
@@ -382,12 +383,12 @@ async function cambiarPassword(e) {
     const confirmPassword = document.getElementById('confirmPassword').value;
     
     if (newPassword !== confirmPassword) {
-        showMessage('Las contraseñas no coinciden', 'error');
+        AppUtils.mostrarMensaje('Las contraseñas no coinciden', 'error');
         return;
     }
     
     if (newPassword.length < 6) {
-        showMessage('La contraseña debe tener al menos 6 caracteres', 'error');
+        AppUtils.mostrarMensaje('La contraseña debe tener al menos 6 caracteres', 'error');
         return;
     }
     
@@ -407,14 +408,14 @@ async function cambiarPassword(e) {
         
         if (response.ok) {
             cerrarModal('modalPassword');
-            showMessage('Contraseña cambiada exitosamente', 'success');
+            AppUtils.mostrarMensaje('Contraseña cambiada exitosamente', 'success');
         } else {
             const result = await response.json();
-            showMessage(result.error || 'Error al cambiar contraseña', 'error');
+            AppUtils.mostrarMensaje(result.error || 'Error al cambiar contraseña', 'error');
         }
     } catch (error) {
         console.error('Error:', error);
-        showMessage('Error de conexión', 'error');
+        AppUtils.mostrarMensaje('Error de conexión', 'error');
     }
 }
 
@@ -459,18 +460,5 @@ function cerrarSesion() {
     });
 }
 
-function formatDate(dateString) {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('es-ES');
-}
 
-function showMessage(text, type) {
-    const messageDiv = document.getElementById('message');
-    messageDiv.textContent = text;
-    messageDiv.className = `message ${type}`;
-    messageDiv.classList.remove('hidden');
-    
-    setTimeout(() => {
-        messageDiv.classList.add('hidden');
-    }, 5000);
-}
+

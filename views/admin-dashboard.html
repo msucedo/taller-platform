@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Administrador - Taller Mecánico</title>
+    <title>Dashboard Administrador - Llantera</title>
     <link rel="stylesheet" href="/css/styles.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -30,6 +30,7 @@
                 <button class="tab-btn" onclick="showTab('empleados')">👥 Empleados</button>
                 <button class="tab-btn" onclick="showTab('reportes')">📊 Reportes</button>
                 <button class="tab-btn" onclick="showTab('configuracion')">⚙️ Configuración</button>
+                <button class="tab-btn" onclick="irAInventario()">📦 Inventario</button>
             </div>
 
             <!-- Tab Solicitudes -->
@@ -138,7 +139,7 @@
                         </div>
                         <div class="reporte-card">
                             <h3>Tiempos de Respuesta</h3>
-                            <p>Análisis de eficiencia del taller</p>
+                            <p>Análisis de eficiencia de la llantera</p>
                             <button class="btn btn-secondary">Generar Reporte</button>
                         </div>
                         <div class="reporte-card">
@@ -161,7 +162,7 @@
                             <button class="btn btn-secondary">Editar Perfil</button>
                         </div>
                         <div class="config-card">
-                            <h3>Configuración del Taller</h3>
+                            <h3>Configuración de la Llantera</h3>
                             <p>Nombre, dirección, información de contacto</p>
                             <button class="btn btn-secondary">Configurar</button>
                         </div>
@@ -265,7 +266,7 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="editarNotas">Notas del Taller</label>
+                        <label for="editarNotas">Notas de la Llantera</label>
                         <textarea id="editarNotas" name="notas_taller" rows="3"></textarea>
                     </div>
 
@@ -278,8 +279,16 @@
         </div>
 
         <div id="message" class="message hidden"></div>
+        
+        <footer>
+            <div class="version-info">
+                <span id="app-version">v1.0.0</span> | 
+                <span>by msaucedo</span>
+            </div>
+        </footer>
     </div>
 
+    <script src="/js/utils.js"></script>
     <script src="/js/admin-dashboard.js"></script>
 </body>
 </html>

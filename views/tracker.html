@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rastrear Solicitud - Taller Mecánico</title>
+    <title>Rastrear Solicitud - Llantera</title>
     <link rel="stylesheet" href="/css/styles.css">
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>Taller Mecánico</h1>
+            <h1>Llantera</h1>
             <p>Rastrear Estado de Solicitud</p>
         </header>
 
@@ -40,6 +40,10 @@
                 <a href="/proveedor">Portal Proveedor</a> | 
                 <a href="/dashboard">Dashboard (Propietario)</a>
             </p>
+            <div class="version-info">
+                <span id="app-version">v1.0.0</span> | 
+                <span>by msaucedo</span>
+            </div>
         </footer>
     </div>
 
@@ -142,7 +146,7 @@
                         
                         ${solicitud.notas_taller ? `
                         <div class="notas-section">
-                            <strong>📝 Notas del Taller:</strong>
+                            <strong>📝 Notas de la Llantera:</strong>
                             <p>${solicitud.notas_taller}</p>
                         </div>
                         ` : ''}

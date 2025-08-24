@@ -75,6 +75,10 @@
                 <a href="/tracker">Rastrear Solicitud</a> | 
                 <a href="/proveedor">Portal Proveedor</a>
             </p>
+            <div class="version-info">
+                <span id="app-version">v1.0.0</span> | 
+                <span>by msaucedo</span>
+            </div>
         </footer>
     </div>
 
@@ -129,7 +133,7 @@
                 container.innerHTML = `
                     <div class="no-data">
                         <h3>No hay solicitudes</h3>
-                        <p>Aún no has enviado solicitudes al taller.</p>
+                        <p>Aún no has enviado solicitudes a la llantera.</p>
                         <a href="/" class="btn btn-primary">Crear Primera Solicitud</a>
                     </div>
                 `;
@@ -162,7 +166,7 @@
                         
                         ${solicitud.notas_taller ? `
                         <div class="notas-taller">
-                            <strong>📝 Respuesta del Taller:</strong>
+                            <strong>📝 Respuesta de la Llantera:</strong>
                             <p>${solicitud.notas_taller}</p>
                         </div>
                         ` : ''}

@@ -4,16 +4,123 @@ const sqlite3 = require('sqlite3').verbose();
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const path = require('path');
+const multer = require('multer');
+const fs = require('fs');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+const { body, validationResult, param } = require('express-validator');
 const { initDatabase, dbPath, generateTrackerCode, generateSessionToken, hashPassword, comparePassword } = require('./database/init');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 const NODE_ENV = process.env.NODE_ENV || 'development';
 
-app.use(cors());
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+// Configuraciones de seguridad
+app.use(helmet({
+    contentSecurityPolicy: {
+        directives: {
+            defaultSrc: ["'self'"],
+            styleSrc: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com"],
+            scriptSrc: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com"],
+            imgSrc: ["'self'", "data:", "https:", "via.placeholder.com"],
+            fontSrc: ["'self'", "https:"],
+        },
+    },
+}));
+
+// Rate limiting
+const generalLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutos
+    max: 100, // máximo 100 requests por ventana
+    message: { error: 'Demasiadas peticiones, intente más tarde' }
+});
+
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutos
+    max: 5, // máximo 5 intentos de login por ventana
+    message: { error: 'Demasiados intentos de login, intente más tarde' }
+});
+
+const apiLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutos
+    max: 200, // máximo 200 requests por ventana para APIs
+    message: { error: 'Límite de API excedido, intente más tarde' }
+});
+
+app.use(generalLimiter);
+app.use('/api/empleado/login', authLimiter);
+app.use('/api/', apiLimiter);
+
+app.use(cors({
+    origin: process.env.NODE_ENV === 'production' ? process.env.ALLOWED_ORIGINS?.split(',') : true,
+    credentials: true
+}));
+app.use(bodyParser.json({ limit: '10mb' }));
+app.use(bodyParser.urlencoded({ extended: true, limit: '10mb' }));
 app.use(express.static('public'));
+
+// Middleware para sanitizar y validar inputs
+const sanitizeInput = (req, res, next) => {
+    if (req.body) {
+        for (const key in req.body) {
+            if (typeof req.body[key] === 'string') {
+                req.body[key] = req.body[key].trim();
+            }
+        }
+    }
+    next();
+};
+
+app.use(sanitizeInput);
+
+// Middleware para manejar errores de validación
+const handleValidationErrors = (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({
+            error: 'Datos de entrada inválidos',
+            details: errors.array().map(err => ({
+                field: err.param,
+                message: err.msg,
+                value: err.value
+            }))
+        });
+    }
+    next();
+};
+
+// Configurar multer para upload de imágenes
+const uploadDir = path.join(__dirname, 'public', 'images', 'uploads');
+if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, uploadDir);
+    },
+    filename: function (req, file, cb) {
+        // Generar nombre único para el archivo
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        const extension = path.extname(file.originalname);
+        cb(null, 'llanta-' + uniqueSuffix + extension);
+    }
+});
+
+const upload = multer({
+    storage: storage,
+    limits: {
+        fileSize: 5 * 1024 * 1024, // 5MB máximo
+    },
+    fileFilter: function (req, file, cb) {
+        // Solo permitir imágenes
+        if (file.mimetype.startsWith('image/')) {
+            cb(null, true);
+        } else {
+            cb(new Error('Solo se permiten archivos de imagen'));
+        }
+    }
+});
 
 initDatabase();
 
@@ -25,7 +132,37 @@ app.get('/dashboard', (req, res) => {
     res.sendFile(path.join(__dirname, 'views', 'dashboard.html'));
 });
 
-app.post('/api/solicitudes', (req, res) => {
+app.get('/cotizaciones', (req, res) => {
+    res.sendFile(path.join(__dirname, 'views', 'cotizaciones.html'));
+});
+
+app.post('/api/solicitudes', [
+    body('proveedor_nombre')
+        .trim()
+        .isLength({ min: 2, max: 100 })
+        .withMessage('El nombre debe tener entre 2 y 100 caracteres')
+        .matches(/^[a-zA-ZÀ-ÿ\s]+$/)
+        .withMessage('El nombre solo puede contener letras y espacios'),
+    body('proveedor_email')
+        .isEmail()
+        .withMessage('Debe ser un email válido')
+        .normalizeEmail(),
+    body('proveedor_telefono')
+        .optional()
+        .matches(/^[\d\s\-\+\(\)]+$/)
+        .withMessage('Teléfono debe contener solo números y símbolos válidos'),
+    body('tipo_servicio')
+        .isIn(['repuestos', 'herramientas', 'pintura', 'grua', 'mecanico', 'otros'])
+        .withMessage('Tipo de servicio inválido'),
+    body('descripcion')
+        .trim()
+        .isLength({ min: 10, max: 1000 })
+        .withMessage('La descripción debe tener entre 10 y 1000 caracteres'),
+    body('urgencia')
+        .isIn(['baja', 'media', 'alta', 'critica'])
+        .withMessage('Nivel de urgencia inválido'),
+    handleValidationErrors
+], (req, res) => {
     const { 
         proveedor_nombre, 
         proveedor_email, 
@@ -183,7 +320,16 @@ app.get('/empleado/login', (req, res) => {
 });
 
 // API Login empleados
-app.post('/api/empleado/login', (req, res) => {
+app.post('/api/empleado/login', [
+    body('email')
+        .isEmail()
+        .withMessage('Debe ser un email válido')
+        .normalizeEmail(),
+    body('password')
+        .isLength({ min: 6 })
+        .withMessage('La contraseña debe tener al menos 6 caracteres'),
+    handleValidationErrors
+], (req, res) => {
     const { email, password } = req.body;
     
     if (!email || !password) {
@@ -299,6 +445,15 @@ function requireAuth(req, res, next) {
 // Dashboard admin (solo para admin)
 app.get('/admin/dashboard', (req, res) => {
     res.sendFile(path.join(__dirname, 'views', 'admin-dashboard.html'));
+});
+
+app.get('/admin/inventario', requireAuth, requireAdmin, (req, res) => {
+    res.sendFile(path.join(__dirname, 'views', 'admin-inventario.html'));
+});
+
+// Ruta temporal para probar el inventario sin autenticación (ELIMINAR EN PRODUCCIÓN)
+app.get('/inventario-demo', (req, res) => {
+    res.sendFile(path.join(__dirname, 'views', 'admin-inventario.html'));
 });
 
 // Dashboard empleado (para mecánicos y recepcionistas)  
@@ -662,6 +817,419 @@ app.post('/api/solicitudes/:id/asignar', requireAuth, requireAdmin, (req, res) =
 });
 
 // DEBUG: Endpoint temporal para verificar admin
+app.get('/api/version', (req, res) => {
+    try {
+        const packagePath = path.join(__dirname, 'package.json');
+        const packageData = require(packagePath);
+        res.json({
+            version: packageData.version,
+            name: packageData.name,
+            description: packageData.description
+        });
+    } catch (error) {
+        res.status(500).json({ error: 'Could not load version info' });
+    }
+});
+
+// API endpoints para inventario de llantas
+app.get('/api/inventario/productos', requireAuth, requireAdmin, (req, res) => {
+    const db = new sqlite3.Database(dbPath);
+    
+    db.all('SELECT * FROM productos_llantas WHERE activo = 1 ORDER BY marca, modelo', (err, productos) => {
+        if (err) {
+            res.status(500).json({ error: err.message });
+            return;
+        }
+        res.json(productos);
+    });
+    
+    db.close();
+});
+
+app.post('/api/inventario/productos', [
+    body('marca')
+        .trim()
+        .isLength({ min: 2, max: 50 })
+        .withMessage('La marca debe tener entre 2 y 50 caracteres')
+        .matches(/^[a-zA-Z0-9À-ÿ\s\-]+$/)
+        .withMessage('La marca contiene caracteres inválidos'),
+    body('modelo')
+        .trim()
+        .isLength({ min: 2, max: 100 })
+        .withMessage('El modelo debe tener entre 2 y 100 caracteres'),
+    body('medida')
+        .matches(/^\d{3}\/\d{2}R\d{2}$/)
+        .withMessage('La medida debe tener el formato correcto (ej: 205/55R16)'),
+    body('precio_venta')
+        .isFloat({ min: 0.01 })
+        .withMessage('El precio de venta debe ser mayor a 0'),
+    body('stock_actual')
+        .isInt({ min: 0 })
+        .withMessage('El stock actual debe ser un número entero positivo'),
+    body('stock_minimo')
+        .isInt({ min: 0 })
+        .withMessage('El stock mínimo debe ser un número entero positivo'),
+    body('imagen_url')
+        .optional()
+        .isURL()
+        .withMessage('La URL de imagen debe ser válida'),
+    handleValidationErrors
+], requireAuth, requireAdmin, (req, res) => {
+    const {
+        marca, modelo, medida, descripcion, precio_compra, precio_venta,
+        stock_actual, stock_minimo, proveedor, imagen_url, caracteristicas
+    } = req.body;
+    
+    if (!marca || !modelo || !medida || !precio_venta) {
+        return res.status(400).json({ error: 'Campos requeridos: marca, modelo, medida, precio_venta' });
+    }
+    
+    const db = new sqlite3.Database(dbPath);
+    
+    const stmt = db.prepare(`INSERT INTO productos_llantas 
+        (marca, modelo, medida, descripcion, precio_compra, precio_venta, 
+         stock_actual, stock_minimo, proveedor, imagen_url, caracteristicas)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+    
+    stmt.run([
+        marca, modelo, medida, descripcion, precio_compra || null, precio_venta,
+        stock_actual || 0, stock_minimo || 5, proveedor || null, imagen_url || null,
+        caracteristicas || null
+    ], function(err) {
+        if (err) {
+            res.status(500).json({ error: err.message });
+        } else {
+            // Registrar movimiento de stock inicial
+            if (stock_actual > 0) {
+                const stmtMovimiento = db.prepare(`INSERT INTO movimientos_stock 
+                    (producto_id, tipo, cantidad, motivo, usuario_id) 
+                    VALUES (?, 'entrada', ?, 'Stock inicial', ?)`);
+                stmtMovimiento.run([this.lastID, stock_actual, req.user.id]);
+                stmtMovimiento.finalize();
+            }
+            
+            res.json({ 
+                id: this.lastID, 
+                mensaje: 'Producto agregado correctamente',
+                producto: {
+                    id: this.lastID,
+                    marca, modelo, medida, descripcion, precio_compra, precio_venta,
+                    stock_actual: stock_actual || 0, stock_minimo: stock_minimo || 5,
+                    proveedor, imagen_url, caracteristicas, activo: 1
+                }
+            });
+        }
+    });
+    
+    stmt.finalize();
+    db.close();
+});
+
+app.put('/api/inventario/productos/:id', [
+    param('id').isInt({ min: 1 }).withMessage('ID debe ser un número entero positivo'),
+    body('marca')
+        .trim()
+        .isLength({ min: 2, max: 50 })
+        .withMessage('La marca debe tener entre 2 y 50 caracteres')
+        .matches(/^[a-zA-Z0-9À-ÿ\s\-]+$/)
+        .withMessage('La marca contiene caracteres inválidos'),
+    body('modelo')
+        .trim()
+        .isLength({ min: 2, max: 100 })
+        .withMessage('El modelo debe tener entre 2 y 100 caracteres'),
+    body('medida')
+        .matches(/^\d{3}\/\d{2}R\d{2}$/)
+        .withMessage('La medida debe tener el formato correcto (ej: 205/55R16)'),
+    body('precio_venta')
+        .isFloat({ min: 0.01 })
+        .withMessage('El precio de venta debe ser mayor a 0'),
+    body('stock_actual')
+        .isInt({ min: 0 })
+        .withMessage('El stock actual debe ser un número entero positivo'),
+    body('stock_minimo')
+        .isInt({ min: 0 })
+        .withMessage('El stock mínimo debe ser un número entero positivo'),
+    handleValidationErrors
+], requireAuth, requireAdmin, (req, res) => {
+    const { id } = req.params;
+    const {
+        marca, modelo, medida, descripcion, precio_compra, precio_venta,
+        stock_actual, stock_minimo, proveedor, imagen_url, caracteristicas
+    } = req.body;
+    
+    if (!marca || !modelo || !medida || !precio_venta) {
+        return res.status(400).json({ error: 'Campos requeridos: marca, modelo, medida, precio_venta' });
+    }
+    
+    const db = new sqlite3.Database(dbPath);
+    
+    // Obtener stock actual para comparar
+    db.get('SELECT stock_actual FROM productos_llantas WHERE id = ?', [id], (err, producto) => {
+        if (err) {
+            res.status(500).json({ error: err.message });
+            return;
+        }
+        
+        if (!producto) {
+            res.status(404).json({ error: 'Producto no encontrado' });
+            return;
+        }
+        
+        const stockAnterior = producto.stock_actual;
+        const nuevoStock = parseInt(stock_actual) || 0;
+        
+        const stmt = db.prepare(`UPDATE productos_llantas SET 
+            marca = ?, modelo = ?, medida = ?, descripcion = ?, precio_compra = ?, 
+            precio_venta = ?, stock_actual = ?, stock_minimo = ?, proveedor = ?, 
+            imagen_url = ?, caracteristicas = ?, fecha_actualizacion = CURRENT_TIMESTAMP
+            WHERE id = ?`);
+        
+        stmt.run([
+            marca, modelo, medida, descripcion, precio_compra || null, precio_venta,
+            nuevoStock, stock_minimo || 5, proveedor || null, imagen_url || null,
+            caracteristicas || null, id
+        ], function(err) {
+            if (err) {
+                res.status(500).json({ error: err.message });
+            } else {
+                // Registrar movimiento de stock si cambió
+                if (stockAnterior !== nuevoStock) {
+                    const diferencia = nuevoStock - stockAnterior;
+                    const tipoMovimiento = diferencia > 0 ? 'entrada' : 'salida';
+                    const motivo = 'Ajuste manual desde inventario';
+                    
+                    const stmtMovimiento = db.prepare(`INSERT INTO movimientos_stock 
+                        (producto_id, tipo, cantidad, motivo, usuario_id) 
+                        VALUES (?, ?, ?, ?, ?)`);
+                    stmtMovimiento.run([id, tipoMovimiento, Math.abs(diferencia), motivo, req.user.id]);
+                    stmtMovimiento.finalize();
+                }
+                
+                res.json({ 
+                    mensaje: 'Producto actualizado correctamente',
+                    cambiosStock: stockAnterior !== nuevoStock
+                });
+            }
+        });
+        
+        stmt.finalize();
+    });
+    
+    db.close();
+});
+
+app.delete('/api/inventario/productos/:id', [
+    param('id').isInt({ min: 1 }).withMessage('ID debe ser un número entero positivo'),
+    handleValidationErrors
+], requireAuth, requireAdmin, (req, res) => {
+    const { id } = req.params;
+    const db = new sqlite3.Database(dbPath);
+    
+    const stmt = db.prepare('UPDATE productos_llantas SET activo = 0 WHERE id = ?');
+    
+    stmt.run([id], function(err) {
+        if (err) {
+            res.status(500).json({ error: err.message });
+        } else if (this.changes === 0) {
+            res.status(404).json({ error: 'Producto no encontrado' });
+        } else {
+            res.json({ mensaje: 'Producto eliminado correctamente' });
+        }
+    });
+    
+    stmt.finalize();
+    db.close();
+});
+
+// API para estadísticas del inventario
+app.get('/api/inventario/estadisticas', requireAuth, requireAdmin, (req, res) => {
+    const db = new sqlite3.Database(dbPath);
+    
+    const estadisticas = {};
+    
+    // Total de productos
+    db.get('SELECT COUNT(*) as total FROM productos_llantas WHERE activo = 1', (err, result) => {
+        if (err) {
+            res.status(500).json({ error: err.message });
+            return;
+        }
+        estadisticas.totalProductos = result.total;
+        
+        // Productos con stock bajo
+        db.get(`SELECT COUNT(*) as total FROM productos_llantas 
+                WHERE activo = 1 AND stock_actual <= stock_minimo`, (err, result) => {
+            if (err) {
+                res.status(500).json({ error: err.message });
+                return;
+            }
+            estadisticas.stockBajo = result.total;
+            
+            // Valor total del inventario
+            db.get(`SELECT SUM(stock_actual * precio_venta) as valor FROM productos_llantas 
+                    WHERE activo = 1`, (err, result) => {
+                if (err) {
+                    res.status(500).json({ error: err.message });
+                    return;
+                }
+                estadisticas.valorInventario = result.valor || 0;
+                
+                // Productos activos
+                db.get('SELECT COUNT(*) as total FROM productos_llantas WHERE activo = 1', (err, result) => {
+                    if (err) {
+                        res.status(500).json({ error: err.message });
+                        return;
+                    }
+                    estadisticas.productosActivos = result.total;
+                    
+                    res.json(estadisticas);
+                });
+            });
+        });
+    });
+    
+    db.close();
+});
+
+// API para compatibilidades vehículo-llanta
+app.get('/api/inventario/compatibilidades', requireAuth, requireAdmin, (req, res) => {
+    const db = new sqlite3.Database(dbPath);
+    
+    db.all(`SELECT c.*, p.marca as marca_llanta, p.modelo as modelo_llanta 
+            FROM vehiculo_llanta_compatibilidad c
+            LEFT JOIN productos_llantas p ON c.medida_llanta = p.medida
+            ORDER BY c.marca_vehiculo, c.modelo_vehiculo, c.ano_desde`, (err, compatibilidades) => {
+        if (err) {
+            res.status(500).json({ error: err.message });
+            return;
+        }
+        res.json(compatibilidades);
+    });
+    
+    db.close();
+});
+
+app.post('/api/inventario/compatibilidades', requireAuth, requireAdmin, (req, res) => {
+    const {
+        marca_vehiculo, modelo_vehiculo, ano_desde, ano_hasta, 
+        version, medida_llanta, es_original, notas
+    } = req.body;
+    
+    if (!marca_vehiculo || !modelo_vehiculo || !ano_desde || !ano_hasta || !medida_llanta) {
+        return res.status(400).json({ error: 'Campos requeridos: marca_vehiculo, modelo_vehiculo, ano_desde, ano_hasta, medida_llanta' });
+    }
+    
+    const db = new sqlite3.Database(dbPath);
+    
+    const stmt = db.prepare(`INSERT INTO vehiculo_llanta_compatibilidad 
+        (marca_vehiculo, modelo_vehiculo, ano_desde, ano_hasta, version, medida_llanta, es_original, notas)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`);
+    
+    stmt.run([
+        marca_vehiculo, modelo_vehiculo, ano_desde, ano_hasta, 
+        version || null, medida_llanta, es_original || 0, notas || null
+    ], function(err) {
+        if (err) {
+            res.status(500).json({ error: err.message });
+        } else {
+            res.json({ 
+                id: this.lastID, 
+                mensaje: 'Compatibilidad agregada correctamente'
+            });
+        }
+    });
+    
+    stmt.finalize();
+    db.close();
+});
+
+app.delete('/api/inventario/compatibilidades/:id', requireAuth, requireAdmin, (req, res) => {
+    const { id } = req.params;
+    const db = new sqlite3.Database(dbPath);
+    
+    const stmt = db.prepare('DELETE FROM vehiculo_llanta_compatibilidad WHERE id = ?');
+    
+    stmt.run([id], function(err) {
+        if (err) {
+            res.status(500).json({ error: err.message });
+        } else if (this.changes === 0) {
+            res.status(404).json({ error: 'Compatibilidad no encontrada' });
+        } else {
+            res.json({ mensaje: 'Compatibilidad eliminada correctamente' });
+        }
+    });
+    
+    stmt.finalize();
+    db.close();
+});
+
+// API para buscar llantas por vehículo
+app.get('/api/inventario/buscar-por-vehiculo', (req, res) => {
+    const { marca, modelo, ano } = req.query;
+    
+    if (!marca || !modelo || !ano) {
+        return res.status(400).json({ error: 'Faltan parámetros: marca, modelo, ano' });
+    }
+    
+    const db = new sqlite3.Database(dbPath);
+    
+    const query = `
+        SELECT DISTINCT p.* 
+        FROM productos_llantas p
+        INNER JOIN vehiculo_llanta_compatibilidad c ON p.medida = c.medida_llanta
+        WHERE c.marca_vehiculo = ? 
+        AND c.modelo_vehiculo = ? 
+        AND ? BETWEEN c.ano_desde AND c.ano_hasta
+        AND p.activo = 1
+        ORDER BY p.marca, p.modelo
+    `;
+    
+    db.all(query, [marca, modelo, ano], (err, productos) => {
+        if (err) {
+            res.status(500).json({ error: err.message });
+            return;
+        }
+        res.json(productos);
+    });
+    
+    db.close();
+});
+
+// API para upload de imágenes de llantas
+app.post('/api/inventario/upload-imagen', requireAuth, requireAdmin, upload.single('imagen'), (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ error: 'No se recibió ninguna imagen' });
+        }
+        
+        const imageUrl = `/images/uploads/${req.file.filename}`;
+        
+        res.json({ 
+            mensaje: 'Imagen subida correctamente',
+            url: imageUrl,
+            filename: req.file.filename
+        });
+        
+    } catch (error) {
+        console.error('Error subiendo imagen:', error);
+        res.status(500).json({ error: 'Error al subir la imagen' });
+    }
+});
+
+// Ruta para eliminar imagen
+app.delete('/api/inventario/eliminar-imagen/:filename', requireAuth, requireAdmin, (req, res) => {
+    const { filename } = req.params;
+    const imagePath = path.join(uploadDir, filename);
+    
+    fs.unlink(imagePath, (err) => {
+        if (err) {
+            console.error('Error eliminando imagen:', err);
+            res.status(500).json({ error: 'Error al eliminar la imagen' });
+        } else {
+            res.json({ mensaje: 'Imagen eliminada correctamente' });
+        }
+    });
+});
+
 app.get('/api/debug/admin', (req, res) => {
     const db = new sqlite3.Database(dbPath);
     
@@ -725,10 +1293,42 @@ app.post('/api/debug/recreate-admin', (req, res) => {
     });
 });
 
+// Middleware global de manejo de errores
+app.use((error, req, res, next) => {
+    console.error('Error no manejado:', error);
+    
+    // Error de multer
+    if (error.code === 'LIMIT_FILE_SIZE') {
+        return res.status(400).json({ error: 'Archivo muy grande. Tamaño máximo: 5MB' });
+    }
+    
+    // Error de validación de multer
+    if (error.message === 'Solo se permiten archivos de imagen') {
+        return res.status(400).json({ error: error.message });
+    }
+    
+    // Error de base de datos
+    if (error.code === 'SQLITE_ERROR') {
+        return res.status(500).json({ error: 'Error de base de datos' });
+    }
+    
+    // Error genérico
+    res.status(500).json({ 
+        error: NODE_ENV === 'development' ? error.message : 'Error interno del servidor',
+        ...(NODE_ENV === 'development' && { stack: error.stack })
+    });
+});
+
+// Manejo de rutas no encontradas
+app.use('*', (req, res) => {
+    res.status(404).json({ error: 'Ruta no encontrada' });
+});
+
 app.listen(PORT, () => {
     console.log(`🚀 Servidor ejecutándose en http://localhost:${PORT}`);
     console.log(`📁 Base de datos: ${dbPath}`);
     console.log(`🌍 Entorno: ${NODE_ENV}`);
+    console.log(`🔒 Seguridad: Helmet activado, Rate limiting activado`);
     
     if (NODE_ENV === 'production') {
         console.log('✅ Ejecutando en modo PRODUCCIÓN');

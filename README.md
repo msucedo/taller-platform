@@ -1,12 +1,12 @@
-# 🔧 Plataforma Taller Mecánico
+# 🛣️ Plataforma Llantera
 
-Sistema web para gestión de solicitudes de servicios de taller mecánico con dashboard administrativo y de empleados.
+Sistema web para gestión de solicitudes de servicios de llantera con dashboard administrativo y de empleados.
 
 ## ✨ Características
 
 - **🎯 Formulario wizard** para solicitudes de clientes
 - **📋 Sistema de tracking** con códigos únicos
-- **👥 Gestión de empleados** con roles (admin, mecánico, recepcionista)
+- **👥 Gestión de empleados** con roles (admin, vendedor, recepcionista)
 - **🔐 Autenticación segura** con bcrypt y tokens de sesión
 - **📊 Dashboards** diferenciados por rol
 - **📝 Sistema de asignación** de solicitudes a empleados
@@ -49,9 +49,9 @@ Después de la instalación, se crean los siguientes usuarios:
 
 | Email | Contraseña | Rol |
 |-------|------------|-----|
-| admin@taller.com | admin123 | admin |
-| carlos.mendez@taller.com | mecanico123 | mecanico |
-| maria.gonzalez@taller.com | recepcion123 | recepcionista |
+| admin@llantera.com | admin123 | admin |
+| carlos.mendez@llantera.com | vendedor123 | vendedor |
+| maria.gonzalez@llantera.com | recepcion123 | recepcionista |
 
 ⚠️ **IMPORTANTE**: Cambia estas contraseñas en producción.
 
@@ -134,7 +134,7 @@ sqlite3 database/taller.db "UPDATE usuarios SET activo = 1"
 ```
 
 ## Notas, mejoras
-- en la pagina de rastreo, agregar a cada rastreo la evidencia cuando se asigna o reasigna una solicitud
+- en la pantalla "dashboard administrador" no sirven los botones de arriba para "empleados", "reportes" y "configuracion", no hacen nada al hacer clic, tampoco sirve el boton "cerrar sesion" no hace nada y el boton "inventario" manda a una pantalla con este error: "{"error":"Token no proporcionado"}"
 
 
 ## 📄 Licencia

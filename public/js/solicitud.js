@@ -1,4 +1,7 @@
 document.addEventListener('DOMContentLoaded', function() {
+    // Cargar información de versión
+    AppUtils.cargarVersion();
+    
     const form = document.getElementById('solicitudForm');
     const messageDiv = document.getElementById('message');
     const nextBtn = document.getElementById('nextBtn');
@@ -16,24 +19,28 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Navegación del wizard
-    nextBtn.addEventListener('click', function() {
-        if (validateCurrentStep()) {
-            if (currentStep < totalSteps) {
-                currentStep++;
-                updateWizard();
-                if (currentStep === totalSteps) {
-                    updateSummary();
+    if (nextBtn) {
+        nextBtn.addEventListener('click', function() {
+            if (validateCurrentStep()) {
+                if (currentStep < totalSteps) {
+                    currentStep++;
+                    updateWizard();
+                    if (currentStep === totalSteps) {
+                        updateSummary();
+                    }
                 }
             }
-        }
-    });
+        });
+    }
     
-    prevBtn.addEventListener('click', function() {
-        if (currentStep > 1) {
-            currentStep--;
-            updateWizard();
-        }
-    });
+    if (prevBtn) {
+        prevBtn.addEventListener('click', function() {
+            if (currentStep > 1) {
+                currentStep--;
+                updateWizard();
+            }
+        });
+    }
 
     form.addEventListener('submit', async function(e) {
         e.preventDefault();
@@ -46,7 +53,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const data = Object.fromEntries(formData);
         
         try {
-            showMessage('Enviando solicitud...', 'info');
+            AppUtils.mostrarMensaje('Enviando solicitud...', 'info');
             
             const response = await fetch('/api/solicitudes', {
                 method: 'POST',
@@ -56,18 +63,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 body: JSON.stringify(data)
             });
             
-            const result = await response.json();
+            const result = await AppUtils.manejarRespuestaAPI(response);
             
-            if (response.ok) {
-                showMessage(`¡Solicitud enviada correctamente! Código de seguimiento: ${result.tracker || result.id}. Nos pondremos en contacto pronto.`, 'success');
-                form.reset();
-                currentStep = 1;
-                updateWizard();
-            } else {
-                showMessage('Error al enviar la solicitud: ' + result.error, 'error');
-            }
+            AppUtils.mostrarMensaje(`¡Solicitud enviada correctamente! Código de seguimiento: ${result.tracker || result.id}. Nos pondremos en contacto pronto.`, 'success');
+            form.reset();
+            currentStep = 1;
+            updateWizard();
         } catch (error) {
-            showMessage('Error de conexión. Por favor, intente nuevamente.', 'error');
+            AppUtils.mostrarMensaje('Error de conexión. Por favor, intente nuevamente.', 'error');
             console.error('Error:', error);
         }
     });
@@ -104,23 +107,42 @@ document.addEventListener('DOMContentLoaded', function() {
         
         requiredFields.forEach(field => {
             field.classList.remove('error');
-            if (!field.value.trim()) {
+            const value = field.value.trim();
+            
+            if (!value) {
                 field.classList.add('error');
                 isValid = false;
+                return;
             }
+            
+            // Validación específica por tipo de campo
+            if (field.type === 'email' && !AppUtils.validarEmail(value)) {
+                field.classList.add('error');
+                AppUtils.mostrarMensaje('Por favor ingrese un email válido', 'error');
+                isValid = false;
+            }
+            
+            if (field.type === 'tel' && !AppUtils.validarTelefono(value)) {
+                field.classList.add('error');
+                AppUtils.mostrarMensaje('Por favor ingrese un teléfono válido', 'error');
+                isValid = false;
+            }
+            
+            // Sanitizar texto para prevenir XSS
+            field.value = AppUtils.sanitizarTexto(value);
         });
         
         // Validación especial para step 2 (urgencia)
         if (currentStep === 2) {
             const urgenciaSelected = document.querySelector('input[name="urgencia"]:checked');
             if (!urgenciaSelected) {
-                showMessage('Por favor seleccione el nivel de urgencia', 'error');
+                AppUtils.mostrarMensaje('Por favor seleccione el nivel de urgencia', 'error');
                 isValid = false;
             }
         }
         
         if (!isValid && requiredFields.length > 0) {
-            showMessage('Por favor complete todos los campos obligatorios', 'error');
+            AppUtils.mostrarMensaje('Por favor complete todos los campos obligatorios', 'error');
         }
         
         return isValid;
@@ -162,17 +184,6 @@ document.addEventListener('DOMContentLoaded', function() {
         summaryContent.innerHTML = html;
     }
 
-    function showMessage(text, type) {
-        messageDiv.textContent = text;
-        messageDiv.className = `message ${type}`;
-        messageDiv.classList.remove('hidden');
-        
-        if (type === 'success') {
-            setTimeout(() => {
-                messageDiv.classList.add('hidden');
-            }, 8000);
-        }
-    }
     
     // Agregar estilos para campos con error
     const style = document.createElement('style');
@@ -186,3 +197,4 @@ document.addEventListener('DOMContentLoaded', function() {
     `;
     document.head.appendChild(style);
 });
+

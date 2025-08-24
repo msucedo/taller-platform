@@ -7,7 +7,7 @@ const dbPath = path.join(__dirname, 'taller.db');
 
 function generateTrackerCode() {
     const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    let result = 'TM'; // Prefijo "Taller Mecánico"
+    let result = 'LL'; // Prefijo "Llantera"
     for (let i = 0; i < 6; i++) {
         result += characters.charAt(Math.floor(Math.random() * characters.length));
     }
@@ -176,6 +176,68 @@ function initDatabase() {
                 });
             }
         });
+        
+        // Tablas del sistema de inventario de llantas
+        db.run(`CREATE TABLE IF NOT EXISTS productos_llantas (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            marca TEXT NOT NULL,
+            modelo TEXT NOT NULL,
+            medida TEXT NOT NULL,
+            descripcion TEXT,
+            precio_compra DECIMAL(10,2),
+            precio_venta DECIMAL(10,2) NOT NULL,
+            stock_actual INTEGER DEFAULT 0,
+            stock_minimo INTEGER DEFAULT 5,
+            proveedor TEXT,
+            imagen_url TEXT,
+            caracteristicas TEXT,
+            activo BOOLEAN DEFAULT 1,
+            fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP,
+            fecha_actualizacion DATETIME DEFAULT CURRENT_TIMESTAMP
+        )`);
+        
+        // Tabla de compatibilidad vehículo-llanta
+        db.run(`CREATE TABLE IF NOT EXISTS vehiculo_llanta_compatibilidad (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            marca_vehiculo TEXT NOT NULL,
+            modelo_vehiculo TEXT NOT NULL,
+            ano_desde INTEGER NOT NULL,
+            ano_hasta INTEGER NOT NULL,
+            version TEXT,
+            medida_llanta TEXT NOT NULL,
+            es_original BOOLEAN DEFAULT 0,
+            notas TEXT,
+            fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP
+        )`);
+        
+        // Tabla de movimientos de stock
+        db.run(`CREATE TABLE IF NOT EXISTS movimientos_stock (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            producto_id INTEGER NOT NULL,
+            tipo TEXT NOT NULL, -- 'entrada', 'salida', 'ajuste'
+            cantidad INTEGER NOT NULL,
+            precio_unitario DECIMAL(10,2),
+            motivo TEXT,
+            usuario_id INTEGER,
+            fecha DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (producto_id) REFERENCES productos_llantas(id),
+            FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+        )`);
+        
+        // Tabla de proveedores de llantas
+        db.run(`CREATE TABLE IF NOT EXISTS proveedores_llantas (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            nombre TEXT NOT NULL,
+            contacto TEXT,
+            telefono TEXT,
+            email TEXT,
+            direccion TEXT,
+            sitio_web TEXT,
+            condiciones_pago TEXT,
+            tiempo_entrega_dias INTEGER DEFAULT 7,
+            activo BOOLEAN DEFAULT 1,
+            fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP
+        )`);
         
         // Crear usuario administrador por defecto
         createAdminUser(db);

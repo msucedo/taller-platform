@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cotizaciones - Llantera</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Llantera</h1>
+            <p>Sistema de Cotizaciones de Llantas</p>
+        </header>
+
+        <main>
+            <div class="wizard-container">
+                <h2>Cotizar Llantas</h2>
+                
+                <!-- Selector de tipo de búsqueda -->
+                <div class="search-type-selector">
+                    <div class="search-option">
+                        <label class="search-option-card">
+                            <input type="radio" name="search_type" value="vehiculo" checked>
+                            <span class="option-card">
+                                <strong>🚗 Por Vehículo</strong>
+                                <small>Buscar por marca, modelo, año y versión</small>
+                            </span>
+                        </label>
+                    </div>
+                    <div class="search-option">
+                        <label class="search-option-card">
+                            <input type="radio" name="search_type" value="medida">
+                            <span class="option-card">
+                                <strong>📏 Por Medida</strong>
+                                <small>Buscar por ancho, serie y rin</small>
+                            </span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Formulario por Vehículo -->
+                <div id="form-vehiculo" class="search-form active">
+                    <h3>Buscar por Vehículo</h3>
+                    <p class="step-description">Seleccione las características de su vehículo</p>
+                    
+                    <div class="form-group">
+                        <label for="marca">Marca*</label>
+                        <select id="marca" name="marca" required>
+                            <option value="">Seleccionar marca</option>
+                            <option value="loading" disabled>Cargando marcas...</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="modelo">Modelo*</label>
+                        <select id="modelo" name="modelo" required disabled>
+                            <option value="">Primero seleccione una marca</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="ano">Año*</label>
+                        <select id="ano" name="ano" required disabled>
+                            <option value="">Seleccione primero marca y modelo</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="version">Versión*</label>
+                        <select id="version" name="version" required disabled>
+                            <option value="">Seleccione primero año</option>
+                        </select>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" id="buscar-vehiculo" class="btn btn-primary">Buscar Llantas</button>
+                    </div>
+                </div>
+
+                <!-- Formulario por Medida -->
+                <div id="form-medida" class="search-form">
+                    <h3>Buscar por Medida</h3>
+                    <p class="step-description">Ingrese las medidas de la llanta</p>
+                    
+                    <div class="medida-inputs">
+                        <div class="form-group">
+                            <label for="ancho">Ancho*</label>
+                            <select id="ancho" name="ancho" required>
+                                <option value="">Ancho</option>
+                                <option value="175">175</option>
+                                <option value="185">185</option>
+                                <option value="195">195</option>
+                                <option value="205">205</option>
+                                <option value="215">215</option>
+                                <option value="225">225</option>
+                                <option value="235">235</option>
+                                <option value="245">245</option>
+                                <option value="255">255</option>
+                                <option value="265">265</option>
+                                <option value="275">275</option>
+                                <option value="285">285</option>
+                                <option value="295">295</option>
+                                <option value="305">305</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="serie">Serie*</label>
+                            <select id="serie" name="serie" required>
+                                <option value="">Serie</option>
+                                <option value="35">35</option>
+                                <option value="40">40</option>
+                                <option value="45">45</option>
+                                <option value="50">50</option>
+                                <option value="55">55</option>
+                                <option value="60">60</option>
+                                <option value="65">65</option>
+                                <option value="70">70</option>
+                                <option value="75">75</option>
+                                <option value="80">80</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="rin">Rin*</label>
+                            <select id="rin" name="rin" required>
+                                <option value="">Rin</option>
+                                <option value="13">13</option>
+                                <option value="14">14</option>
+                                <option value="15">15</option>
+                                <option value="16">16</option>
+                                <option value="17">17</option>
+                                <option value="18">18</option>
+                                <option value="19">19</option>
+                                <option value="20">20</option>
+                                <option value="21">21</option>
+                                <option value="22">22</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="medida-example">
+                        <p><strong>Ejemplo de medida:</strong> 205/55R16</p>
+                        <ul>
+                            <li><strong>205</strong> = Ancho (mm)</li>
+                            <li><strong>55</strong> = Serie (%)</li>
+                            <li><strong>16</strong> = Rin (pulgadas)</li>
+                        </ul>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" id="buscar-medida" class="btn btn-primary">Buscar Llantas</button>
+                    </div>
+                </div>
+
+                <!-- Resultados de búsqueda -->
+                <div id="resultados" class="resultados-container" style="display: none;">
+                    <h3>Llantas Disponibles</h3>
+                    <div id="catalogo-llantas" class="catalogo-grid">
+                        <!-- Los resultados se cargarán aquí dinámicamente -->
+                    </div>
+                </div>
+            </div>
+
+            <div id="message" class="message hidden"></div>
+        </main>
+
+        <footer>
+            <p>
+                <a href="/">Inicio</a> | 
+                <a href="/proveedor">Portal Proveedor</a> | 
+                <a href="/tracker">Rastrear Solicitud</a> | 
+                <a href="/empleado/login">Acceso Empleados</a> | 
+                <a href="/dashboard">Dashboard (Propietario)</a>
+            </p>
+            <div class="version-info">
+                <span id="app-version">v1.0.0</span> | 
+                <span>by msaucedo</span>
+            </div>
+        </footer>
+    </div>
+
+    <script src="/js/utils.js"></script>
+    <script src="/js/cotizaciones.js"></script>
+</body>
+</html>

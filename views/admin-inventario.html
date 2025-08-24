@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventario - Administrador</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📦 Gestión de Inventario</h1>
+            <p>Sistema de Administración de Llantas</p>
+            <div class="user-info">
+                <span id="usuario-nombre">Administrador</span>
+                <button onclick="logout()" class="btn btn-secondary btn-sm">Cerrar Sesión</button>
+            </div>
+        </header>
+
+        <nav class="admin-nav">
+            <a href="/admin/dashboard" class="nav-link">📊 Dashboard Principal</a>
+            <a href="/admin/inventario" class="nav-link active">📦 Inventario</a>
+            <a href="/dashboard" class="nav-link">📋 Solicitudes</a>
+        </nav>
+
+        <main>
+            <!-- Dashboard de métricas -->
+            <div class="inventory-dashboard">
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-icon">🛞</div>
+                        <div class="metric-info">
+                            <h3 id="total-productos">0</h3>
+                            <p>Total Productos</p>
+                        </div>
+                    </div>
+                    <div class="metric-card warning">
+                        <div class="metric-icon">⚠️</div>
+                        <div class="metric-info">
+                            <h3 id="stock-bajo">0</h3>
+                            <p>Stock Bajo</p>
+                        </div>
+                    </div>
+                    <div class="metric-card success">
+                        <div class="metric-icon">💰</div>
+                        <div class="metric-info">
+                            <h3 id="valor-inventario">$0</h3>
+                            <p>Valor Inventario</p>
+                        </div>
+                    </div>
+                    <div class="metric-card info">
+                        <div class="metric-icon">📈</div>
+                        <div class="metric-info">
+                            <h3 id="productos-activos">0</h3>
+                            <p>Productos Activos</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Controles de la tabla -->
+            <div class="inventory-controls">
+                <div class="controls-left">
+                    <button onclick="mostrarFormularioNuevo()" class="btn btn-success">
+                        ➕ Nuevo Producto
+                    </button>
+                    <button onclick="exportarInventario()" class="btn btn-secondary">
+                        📊 Exportar Excel
+                    </button>
+                </div>
+                <div class="controls-right">
+                    <div class="search-container">
+                        <input type="text" id="buscar-producto" placeholder="Buscar por marca, modelo, medida..." class="search-input">
+                        <button onclick="limpiarBusqueda()" class="btn btn-secondary btn-sm">Limpiar</button>
+                    </div>
+                    <select id="filtro-stock" class="filter-select">
+                        <option value="">Todos los productos</option>
+                        <option value="disponible">Solo disponibles</option>
+                        <option value="bajo">Stock bajo</option>
+                        <option value="agotado">Agotados</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Tabla de productos -->
+            <div class="inventory-table-container">
+                <div class="loading" id="loading-productos">
+                    <div class="spinner"></div>
+                    <p>Cargando inventario...</p>
+                </div>
+                
+                <div id="productos-container" style="display: none;">
+                    <table class="inventory-table">
+                        <thead>
+                            <tr>
+                                <th class="sortable" onclick="ordenarPor('imagen')">Imagen</th>
+                                <th class="sortable" onclick="ordenarPor('marca')">Marca</th>
+                                <th class="sortable" onclick="ordenarPor('modelo')">Modelo</th>
+                                <th class="sortable" onclick="ordenarPor('medida')">Medida</th>
+                                <th class="sortable" onclick="ordenarPor('stock')">Stock</th>
+                                <th class="sortable" onclick="ordenarPor('precio')">Precio</th>
+                                <th class="sortable" onclick="ordenarPor('estado')">Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-productos">
+                            <!-- Los productos se cargarán aquí dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div id="no-productos" style="display: none;" class="empty-state">
+                    <div class="empty-icon">🛞</div>
+                    <h3>No hay productos en el inventario</h3>
+                    <p>Comienza agregando tu primer producto al inventario</p>
+                    <button onclick="mostrarFormularioNuevo()" class="btn btn-primary">
+                        ➕ Agregar Primer Producto
+                    </button>
+                </div>
+            </div>
+
+            <!-- Paginación -->
+            <div id="paginacion" class="pagination-container" style="display: none;">
+                <div class="pagination-info">
+                    <span id="info-paginacion">Mostrando 1-10 de 50 productos</span>
+                </div>
+                <div class="pagination-controls">
+                    <button id="btn-anterior" class="btn btn-secondary btn-sm">← Anterior</button>
+                    <span id="paginas-numeros" class="page-numbers"></span>
+                    <button id="btn-siguiente" class="btn btn-secondary btn-sm">Siguiente →</button>
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <p><a href="/admin/dashboard">← Volver al Dashboard</a></p>
+            <div class="version-info">
+                <span id="app-version">v1.0.0</span> | 
+                <span>by msaucedo</span>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Modal para nuevo/editar producto -->
+    <div id="modal-producto" class="modal hidden">
+        <div class="modal-content large">
+            <h3 id="titulo-modal">Nuevo Producto</h3>
+            <form id="form-producto">
+                <input type="hidden" id="producto-id">
+                
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="producto-marca">Marca*</label>
+                        <input type="text" id="producto-marca" name="marca" required 
+                               placeholder="ej: Michelin, Bridgestone">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="producto-modelo">Modelo*</label>
+                        <input type="text" id="producto-modelo" name="modelo" required 
+                               placeholder="ej: Energy Saver, Turanza">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="producto-medida">Medida*</label>
+                        <input type="text" id="producto-medida" name="medida" required 
+                               placeholder="ej: 205/55R16" pattern="[0-9]+/[0-9]+R[0-9]+">
+                        <small>Formato: ancho/serie/rin (ej: 205/55R16)</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="producto-precio-compra">Precio Compra</label>
+                        <input type="number" id="producto-precio-compra" name="precio_compra" 
+                               min="0" step="100" placeholder="150000">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="producto-precio-venta">Precio Venta*</label>
+                        <input type="number" id="producto-precio-venta" name="precio_venta" 
+                               required min="0" step="100" placeholder="250000">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="producto-stock">Stock Actual*</label>
+                        <input type="number" id="producto-stock" name="stock_actual" 
+                               required min="0" value="0">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="producto-stock-minimo">Stock Mínimo*</label>
+                        <input type="number" id="producto-stock-minimo" name="stock_minimo" 
+                               required min="0" value="5">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="producto-proveedor">Proveedor</label>
+                        <input type="text" id="producto-proveedor" name="proveedor" 
+                               placeholder="Nombre del proveedor">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="producto-descripcion">Descripción</label>
+                    <textarea id="producto-descripcion" name="descripcion" rows="3" 
+                              placeholder="Características técnicas, beneficios..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="producto-imagen">Imagen del Producto</label>
+                    <div class="imagen-upload-container">
+                        <input type="file" id="producto-imagen-file" accept="image/*" style="display: none;">
+                        <input type="url" id="producto-imagen" name="imagen_url" 
+                               placeholder="URL de la imagen o subir archivo">
+                        <div class="upload-buttons">
+                            <button type="button" onclick="abrirSeleccionArchivo()" class="btn btn-secondary btn-sm">
+                                📁 Subir Imagen
+                            </button>
+                            <button type="button" id="btn-vista-previa" onclick="mostrarVistaPrevia()" class="btn btn-info btn-sm">
+                                👁️ Vista Previa
+                            </button>
+                        </div>
+                    </div>
+                    <div id="imagen-preview" class="imagen-preview" style="display: none;">
+                        <img id="preview-img" src="" alt="Vista previa">
+                        <button type="button" onclick="cerrarVistaPrevia()" class="btn btn-danger btn-sm">❌</button>
+                    </div>
+                    <small>Sube una imagen o ingresa la URL. Tamaño máximo: 5MB</small>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-success">💾 Guardar</button>
+                    <button type="button" onclick="cerrarModal()" class="btn btn-secondary">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal de confirmación para eliminar -->
+    <div id="modal-eliminar" class="modal hidden">
+        <div class="modal-content">
+            <h3>🗑️ Confirmar Eliminación</h3>
+            <p>¿Estás seguro de que deseas eliminar este producto del inventario?</p>
+            <p><strong id="producto-eliminar-nombre"></strong></p>
+            <div class="form-actions">
+                <button onclick="confirmarEliminacion()" class="btn btn-danger">Eliminar</button>
+                <button onclick="cerrarModalEliminar()" class="btn btn-secondary">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/utils.js"></script>
+    <script src="/js/admin-inventario.js"></script>
+</body>
+</html>

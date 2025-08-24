@@ -4,6 +4,7 @@ let empleados = [];
 let currentTab = 'solicitudes';
 
 document.addEventListener('DOMContentLoaded', function() {
+    AppUtils.cargarVersion();
     verificarAutenticacion();
     
     // Event listeners para filtros
@@ -85,13 +86,24 @@ function showTab(tabName) {
     
     // Mostrar contenido
     document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-    document.getElementById(`tab-${tabName}`).classList.add('active');
+    const tabElement = document.getElementById(`tab-${tabName}`);
+    if (tabElement) {
+        tabElement.classList.add('active');
+    }
     
     currentTab = tabName;
     
     // Cargar datos según el tab
     if (tabName === 'empleados') {
         loadEmpleados();
+    } else if (tabName === 'reportes') {
+        // Implementar lógica de reportes
+        console.log('Funcionalidad de reportes próximamente');
+        AppUtils.mostrarMensaje('Funcionalidad de reportes próximamente', 'info');
+    } else if (tabName === 'configuracion') {
+        // Implementar lógica de configuración
+        console.log('Funcionalidad de configuración próximamente');
+        AppUtils.mostrarMensaje('Funcionalidad de configuración próximamente', 'info');
     }
 }
 
@@ -105,7 +117,7 @@ async function loadSolicitudes() {
         mostrarSolicitudes(solicitudes);
     } catch (error) {
         console.error('Error al cargar solicitudes:', error);
-        showMessage('Error al cargar las solicitudes', 'error');
+        AppUtils.mostrarMensaje('Error al cargar las solicitudes', 'error');
     }
 }
 
@@ -147,7 +159,7 @@ function mostrarSolicitudes(solicitudesList) {
                 ${solicitud.empresa ? `<p><strong>Empresa:</strong> ${solicitud.empresa}</p>` : ''}
                 <p><strong>Urgencia:</strong> ${solicitud.urgencia}</p>
                 <p><strong>Descripción:</strong> ${solicitud.descripcion}</p>
-                <p><strong>Fecha:</strong> ${formatDate(solicitud.fecha_solicitud)}</p>
+                <p><strong>Fecha:</strong> ${AppUtils.formatearFecha(solicitud.fecha_solicitud)}</p>
                 ${solicitud.fecha_preferida ? `<p><strong>Fecha Preferida:</strong> ${formatDate(solicitud.fecha_preferida)}</p>` : ''}
                 ${solicitud.presupuesto_estimado ? `<p><strong>Presupuesto:</strong> ${solicitud.presupuesto_estimado}</p>` : ''}
                 ${solicitud.notas_taller ? `<p><strong>Notas:</strong> ${solicitud.notas_taller}</p>` : ''}
@@ -232,20 +244,20 @@ async function guardarEdicion(e) {
         if (response.ok) {
             cerrarModal('modalEditarSolicitud');
             loadSolicitudes();
-            showMessage('Solicitud actualizada exitosamente', 'success');
+            AppUtils.mostrarMensaje('Solicitud actualizada exitosamente', 'success');
         } else {
-            showMessage('Error al actualizar la solicitud', 'error');
+            AppUtils.mostrarMensaje('Error al actualizar la solicitud', 'error');
         }
     } catch (error) {
         console.error('Error:', error);
-        showMessage('Error de conexión', 'error');
+        AppUtils.mostrarMensaje('Error de conexión', 'error');
     }
 }
 
 async function asignarSolicitud(id) {
     const solicitud = solicitudes.find(s => s.id === id);
     if (!solicitud) {
-        showMessage('Solicitud no encontrada', 'error');
+        AppUtils.mostrarMensaje('Solicitud no encontrada', 'error');
         return;
     }
     
@@ -254,7 +266,7 @@ async function asignarSolicitud(id) {
         mostrarModalAsignacion(id, solicitud);
     } catch (error) {
         console.error('Error cargando empleados:', error);
-        showMessage('Error al cargar empleados', 'error');
+        AppUtils.mostrarMensaje('Error al cargar empleados', 'error');
     }
 }
 
@@ -262,7 +274,7 @@ function mostrarModalAsignacion(id, solicitud) {
     const empleadosActivos = empleados.filter(emp => emp.activo && emp.rol !== 'admin');
     
     if (empleadosActivos.length === 0) {
-        showMessage('No hay empleados disponibles para asignar', 'error');
+        AppUtils.mostrarMensaje('No hay empleados disponibles para asignar', 'error');
         return;
     }
 
@@ -294,7 +306,7 @@ async function confirmarAsignacion(e) {
     const notas = formData.get('notas');
     
     if (!empleadoId) {
-        showMessage('Debe seleccionar un empleado', 'error');
+        AppUtils.mostrarMensaje('Debe seleccionar un empleado', 'error');
         return;
     }
 
@@ -314,16 +326,16 @@ async function confirmarAsignacion(e) {
 
         if (response.ok) {
             const result = await response.json();
-            showMessage('Solicitud asignada correctamente', 'success');
+            AppUtils.mostrarMensaje('Solicitud asignada correctamente', 'success');
             cerrarModal('modalAsignarSolicitud');
             loadSolicitudes(); // Recargar solicitudes para ver cambios
         } else {
             const error = await response.json();
-            showMessage(error.error || 'Error al asignar solicitud', 'error');
+            AppUtils.mostrarMensaje(error.error || 'Error al asignar solicitud', 'error');
         }
     } catch (error) {
         console.error('Error:', error);
-        showMessage('Error de conexión al asignar solicitud', 'error');
+        AppUtils.mostrarMensaje('Error de conexión al asignar solicitud', 'error');
     }
 }
 
@@ -347,12 +359,12 @@ async function loadEmpleados() {
             }
             return empleados;
         } else {
-            showMessage('Error al cargar empleados', 'error');
+            AppUtils.mostrarMensaje('Error al cargar empleados', 'error');
             return [];
         }
     } catch (error) {
         console.error('Error:', error);
-        showMessage('Error de conexión al cargar empleados', 'error');
+        AppUtils.mostrarMensaje('Error de conexión al cargar empleados', 'error');
         return [];
     }
 }
@@ -446,14 +458,14 @@ async function guardarEmpleado(e) {
         if (response.ok) {
             cerrarModal('modalEmpleado');
             loadEmpleados();
-            showMessage(`Empleado ${isEdit ? 'actualizado' : 'creado'} exitosamente`, 'success');
+            AppUtils.mostrarMensaje(`Empleado ${isEdit ? 'actualizado' : 'creado'} exitosamente`, 'success');
         } else {
             const result = await response.json();
-            showMessage(result.error || 'Error al guardar empleado', 'error');
+            AppUtils.mostrarMensaje(result.error || 'Error al guardar empleado', 'error');
         }
     } catch (error) {
         console.error('Error:', error);
-        showMessage('Error de conexión', 'error');
+        AppUtils.mostrarMensaje('Error de conexión', 'error');
     }
 }
 
@@ -478,13 +490,13 @@ async function toggleEmpleado(id, activo) {
         
         if (response.ok) {
             loadEmpleados();
-            showMessage(`Empleado ${activo ? 'activado' : 'desactivado'} exitosamente`, 'success');
+            AppUtils.mostrarMensaje(`Empleado ${activo ? 'activado' : 'desactivado'} exitosamente`, 'success');
         } else {
-            showMessage('Error al cambiar estado del empleado', 'error');
+            AppUtils.mostrarMensaje('Error al cambiar estado del empleado', 'error');
         }
     } catch (error) {
         console.error('Error:', error);
-        showMessage('Error de conexión', 'error');
+        AppUtils.mostrarMensaje('Error de conexión', 'error');
     }
 }
 
@@ -515,26 +527,25 @@ function cerrarSesion() {
     });
 }
 
-function formatDate(dateString) {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('es-ES') + ' ' + date.toLocaleTimeString('es-ES');
+function irAInventario() {
+    const token = localStorage.getItem('empleadoToken');
+    const empleadoData = JSON.parse(localStorage.getItem('empleadoData') || '{}');
+    
+    if (!token || empleadoData.rol !== 'admin') {
+        AppUtils.mostrarMensaje('No tiene permisos para acceder al inventario', 'error');
+        return;
+    }
+    
+    // Navegar a la página de inventario
+    window.location.href = '/admin/inventario';
 }
 
-function showMessage(text, type) {
-    const messageDiv = document.getElementById('message');
-    messageDiv.textContent = text;
-    messageDiv.className = `message ${type}`;
-    messageDiv.classList.remove('hidden');
-    
-    setTimeout(() => {
-        messageDiv.classList.add('hidden');
-    }, 5000);
-}
+
 
 // Funciones de exportación (heredadas del dashboard original)
 function exportarPDF() {
     if (solicitudesFiltradas.length === 0) {
-        showMessage('No hay solicitudes para exportar', 'error');
+        AppUtils.mostrarMensaje('No hay solicitudes para exportar', 'error');
         return;
     }
 
@@ -549,7 +560,7 @@ function exportarPDF() {
     // Título
     doc.setFontSize(18);
     doc.setFont(undefined, 'bold');
-    doc.text('Reporte de Solicitudes - Taller Mecánico', margin, yPosition);
+    doc.text('Reporte de Solicitudes - Llantera', margin, yPosition);
     
     yPosition += 10;
     doc.setFontSize(12);
@@ -589,7 +600,7 @@ function exportarPDF() {
             `Teléfono: ${solicitud.proveedor_telefono || 'No especificado'}`,
             `Servicio: ${solicitud.tipo_servicio}`,
             `Urgencia: ${solicitud.urgencia}`,
-            `Fecha: ${formatDate(solicitud.fecha_solicitud)}`,
+            `Fecha: ${AppUtils.formatearFecha(solicitud.fecha_solicitud)}`,
             `Descripción: ${solicitud.descripcion}`,
         ];
         
@@ -617,7 +628,7 @@ function exportarPDF() {
 
 function exportarExcel() {
     if (solicitudesFiltradas.length === 0) {
-        showMessage('No hay solicitudes para exportar', 'error');
+        AppUtils.mostrarMensaje('No hay solicitudes para exportar', 'error');
         return;
     }
     
@@ -633,7 +644,7 @@ function exportarExcel() {
         'Descripción': solicitud.descripcion,
         'Urgencia': solicitud.urgencia,
         'Estado': solicitud.estado,
-        'Fecha Solicitud': formatDate(solicitud.fecha_solicitud),
+        'Fecha Solicitud': AppUtils.formatearFecha(solicitud.fecha_solicitud),
         'Fecha Preferida': solicitud.fecha_preferida ? formatDate(solicitud.fecha_preferida) : '',
         'Presupuesto': solicitud.presupuesto_estimado || '',
         'Notas Taller': solicitud.notas_taller || ''
@@ -679,3 +690,4 @@ function getEstadoColor(estado) {
     };
     return colores[estado] || { r: 0, g: 0, b: 0 };
 }
+

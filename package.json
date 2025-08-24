@@ -1,7 +1,7 @@
 {
   "name": "taller-platform",
   "version": "1.0.0",
-  "description": "Plataforma web para taller mecánico - solicitudes de proveedores",
+  "description": "Plataforma web para llantera - solicitudes de proveedores",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -29,17 +29,26 @@
     "docker:run:prod": "docker run -d --name taller-prod -p 3000:3000 --env-file .env.production taller-platform"
   },
   "dependencies": {
-    "express": "^4.18.2",
-    "sqlite3": "^5.1.6",
-    "cors": "^2.8.5",
+    "bcrypt": "^5.1.1",
     "body-parser": "^1.20.2",
+    "cors": "^2.8.5",
     "dotenv": "^16.3.1",
-    "bcrypt": "^5.1.1"
+    "express": "^4.18.2",
+    "express-rate-limit": "^8.0.1",
+    "express-validator": "^7.2.1",
+    "helmet": "^8.1.0",
+    "multer": "^2.0.2",
+    "sqlite3": "^5.1.6"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"
   },
-  "keywords": ["taller", "mecanico", "proveedores", "servicios"],
+  "keywords": [
+    "llantera",
+    "neumaticos",
+    "proveedores",
+    "servicios"
+  ],
   "author": "",
   "license": "MIT"
 }
