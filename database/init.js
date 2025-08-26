@@ -7,7 +7,7 @@ const dbPath = path.join(__dirname, 'taller.db');
 
 function generateTrackerCode() {
     const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    let result = 'LL'; // Prefijo "Llantera"
+    let result = 'TM'; // Prefijo "Taller Mecánico"
     for (let i = 0; i < 6; i++) {
         result += characters.charAt(Math.floor(Math.random() * characters.length));
     }
@@ -32,7 +32,7 @@ function comparePassword(password, hash) {
     return bcrypt.compareSync(password, hash);
 }
 
-function createAdminUser(db) {
+function createAdminUser(db, callback) {
     // Crear usuario administrador por defecto usando variables de entorno
     const adminEmail = process.env.ADMIN_EMAIL || 'admin@taller.com';
     const adminPassword = hashPassword(process.env.ADMIN_PASSWORD || 'admin123');
@@ -45,6 +45,7 @@ function createAdminUser(db) {
     db.get('SELECT id FROM usuarios WHERE email = ?', [adminEmail], (err, row) => {
         if (err) {
             console.error('❌ Error al verificar admin existente:', err.message);
+            if (callback) callback(err);
             return;
         }
         
@@ -61,9 +62,13 @@ function createAdminUser(db) {
                            console.log(`👤 Nombre: ${adminName}`);
                            console.log(`🔐 Password configurado: ${!!process.env.ADMIN_PASSWORD ? 'Desde ENV' : 'Por defecto'}`);
                        }
+                       if (callback) callback(null);
                    });
-        } else if (process.env.NODE_ENV !== 'production') {
-            console.log(`ℹ️  Usuario administrador ya existe: ${adminEmail}`);
+        } else {
+            if (process.env.NODE_ENV !== 'production') {
+                console.log(`ℹ️  Usuario administrador ya existe: ${adminEmail}`);
+            }
+            if (callback) callback(null);
         }
     });
 }
@@ -134,6 +139,7 @@ function initDatabase() {
             proveedor_nombre TEXT NOT NULL,
             proveedor_email TEXT NOT NULL,
             proveedor_telefono TEXT,
+            proveedor_oauth_id INTEGER, -- Vinculación con proveedores OAuth
             empresa TEXT,
             tipo_servicio TEXT NOT NULL,
             descripcion TEXT NOT NULL,
@@ -143,7 +149,8 @@ function initDatabase() {
             presupuesto_estimado TEXT,
             estado TEXT DEFAULT 'pendiente',
             notas_taller TEXT,
-            fecha_actualizacion DATETIME DEFAULT CURRENT_TIMESTAMP
+            fecha_actualizacion DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (proveedor_oauth_id) REFERENCES proveedores_oauth(id)
         )`);
         
         // Verificar si necesitamos agregar las nuevas columnas a registros existentes
@@ -174,6 +181,11 @@ function initDatabase() {
                         stmt.finalize();
                     }
                 });
+            }
+            
+            // Agregar columna para vincular con proveedores OAuth si no existe
+            if (!columnNames.includes('proveedor_oauth_id')) {
+                db.run("ALTER TABLE solicitudes ADD COLUMN proveedor_oauth_id INTEGER REFERENCES proveedores_oauth(id)");
             }
         });
         
@@ -343,14 +355,19 @@ function initDatabase() {
         `);
         
         // Crear usuario administrador por defecto
-        createAdminUser(db);
-        
-        if (process.env.NODE_ENV !== 'production') {
-            console.log('Base de datos inicializada correctamente');
-        }
+        createAdminUser(db, (err) => {
+            if (process.env.NODE_ENV !== 'production') {
+                console.log('Base de datos inicializada correctamente');
+            }
+            
+            // Cerrar la conexión después de que todas las operaciones terminen
+            db.close((closeErr) => {
+                if (closeErr && process.env.NODE_ENV !== 'production') {
+                    console.error('Error cerrando la base de datos:', closeErr.message);
+                }
+            });
+        });
     });
-    
-    db.close();
 }
 
 if (require.main === module) {

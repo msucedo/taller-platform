@@ -445,19 +445,8 @@ function cerrarModal(modalId) {
 }
 
 function cerrarSesion() {
-    const token = localStorage.getItem('empleadoToken');
-    
-    fetch('/api/empleado/logout', {
-        method: 'POST',
-        headers: {
-            'Authorization': `Bearer ${token}`
-        }
-    })
-    .finally(() => {
-        localStorage.removeItem('empleadoToken');
-        localStorage.removeItem('empleadoData');
-        window.location.href = '/empleado/login';
-    });
+    // Usar el servicio centralizado de autenticación
+    AuthService.logout();
 }
 
 

@@ -206,14 +206,17 @@
         <div id="message" class="message hidden"></div>
         
         <footer>
-            <div class="version-info">
-                <span id="app-version">v1.0.0</span> | 
-                <span>by msaucedo</span>
-            </div>
+            <!-- Footer generado automáticamente -->
         </footer>
     </div>
 
     <script src="/js/utils.js"></script>
     <script src="/js/empleado-dashboard.js"></script>
+    <script>
+        // Inicializar footer unificado
+        document.addEventListener('DOMContentLoaded', function() {
+            renderFooter({ type: 'full', showNavigation: false });
+        });
+    </script>
 </body>
 </html>

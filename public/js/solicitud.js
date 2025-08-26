@@ -55,6 +55,9 @@ document.addEventListener('DOMContentLoaded', function() {
         try {
             AppUtils.mostrarMensaje('Enviando solicitud...', 'info');
             
+            // Debug: mostrar datos que se envían
+            console.log('Datos a enviar:', data);
+            
             const response = await fetch('/api/solicitudes', {
                 method: 'POST',
                 headers: {
@@ -70,8 +73,14 @@ document.addEventListener('DOMContentLoaded', function() {
             currentStep = 1;
             updateWizard();
         } catch (error) {
-            AppUtils.mostrarMensaje('Error de conexión. Por favor, intente nuevamente.', 'error');
-            console.error('Error:', error);
+            console.error('Error al enviar solicitud:', error);
+            if (error.message.includes('Failed to fetch')) {
+                AppUtils.mostrarMensaje('No se pudo conectar con el servidor. Verifique su conexión a internet.', 'error');
+            } else if (error.message.includes('HTTP: 5')) {
+                AppUtils.mostrarMensaje('Error interno del servidor. Por favor, intente más tarde.', 'error');
+            } else {
+                AppUtils.mostrarMensaje(error.message || 'Error al enviar la solicitud. Por favor, intente nuevamente.', 'error');
+            }
         }
     });
     

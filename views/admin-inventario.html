@@ -64,6 +64,9 @@
                     <button onclick="mostrarFormularioNuevo()" class="btn btn-success">
                         ➕ Nuevo Producto
                     </button>
+                    <button onclick="mostrarImportacionMasiva()" class="btn btn-info">
+                        📥 Importar Productos
+                    </button>
                     <button onclick="exportarInventario()" class="btn btn-secondary">
                         📊 Exportar Excel
                     </button>
@@ -133,11 +136,7 @@
         </main>
 
         <footer>
-            <p><a href="/admin/dashboard">← Volver al Dashboard</a></p>
-            <div class="version-info">
-                <span id="app-version">v1.0.0</span> | 
-                <span>by msaucedo</span>
-            </div>
+            <!-- Footer generado automáticamente -->
         </footer>
     </div>
 
@@ -210,7 +209,7 @@
                     <div class="imagen-upload-container">
                         <input type="file" id="producto-imagen-file" accept="image/*" style="display: none;">
                         <input type="url" id="producto-imagen" name="imagen_url" 
-                               placeholder="URL de la imagen o subir archivo">
+                               placeholder="https://tinyurl.com/bdhn9ubh" value="https://tinyurl.com/bdhn9ubh">
                         <div class="upload-buttons">
                             <button type="button" onclick="abrirSeleccionArchivo()" class="btn btn-secondary btn-sm">
                                 📁 Subir Imagen
@@ -221,7 +220,7 @@
                         </div>
                     </div>
                     <div id="imagen-preview" class="imagen-preview" style="display: none;">
-                        <img id="preview-img" src="" alt="Vista previa">
+                        <img id="preview-img" src="data:image/jpeg;base64,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" alt="Vista previa">
                         <button type="button" onclick="cerrarVistaPrevia()" class="btn btn-danger btn-sm">❌</button>
                     </div>
                     <small>Sube una imagen o ingresa la URL. Tamaño máximo: 5MB</small>
@@ -248,7 +247,176 @@
         </div>
     </div>
 
+    <!-- Modal de confirmación genérico -->
+    <div id="modal-confirmacion" class="modal hidden">
+        <div class="modal-content">
+            <h3 id="confirmacion-titulo">⚠️ Confirmar Acción</h3>
+            <p id="confirmacion-mensaje">¿Está seguro de realizar esta acción?</p>
+            <div class="form-actions">
+                <button id="btn-confirmar-si" class="btn btn-primary">Sí</button>
+                <button id="btn-confirmar-no" class="btn btn-secondary">No</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de información genérico -->
+    <div id="modal-informacion" class="modal hidden">
+        <div class="modal-content">
+            <h3 id="informacion-titulo">ℹ️ Información</h3>
+            <div id="informacion-contenido">
+                <p id="informacion-mensaje"></p>
+            </div>
+            <div class="form-actions">
+                <button id="btn-info-cerrar" class="btn btn-primary">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de detalles de producto -->
+    <div id="modal-detalle-producto" class="modal hidden">
+        <div class="modal-content large">
+            <h3 id="detalle-titulo">📋 Detalles del Producto</h3>
+            <div id="detalle-contenido">
+                <!-- El contenido se llenará dinámicamente -->
+            </div>
+            <div class="form-actions">
+                <button onclick="cerrarModal('modal-detalle-producto')" class="btn btn-primary">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para importación masiva -->
+    <div id="modal-importacion" class="modal hidden">
+        <div class="modal-content large">
+            <h3>📥 Importación Masiva de Productos</h3>
+            
+            <div class="import-steps">
+                <div class="step-indicator">
+                    <div class="step active" data-step="1">
+                        <span class="step-number">1</span>
+                        <span class="step-title">Cargar Archivo</span>
+                    </div>
+                    <div class="step" data-step="2">
+                        <span class="step-number">2</span>
+                        <span class="step-title">Revisar Datos</span>
+                    </div>
+                    <div class="step" data-step="3">
+                        <span class="step-number">3</span>
+                        <span class="step-title">Importar</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Paso 1: Selección de archivo -->
+            <div id="paso-archivo" class="import-step active">
+                <div class="import-instructions">
+                    <h4>📋 Instrucciones</h4>
+                    <ul>
+                        <li>Sube un archivo CSV o Excel (.xlsx) con los datos de los productos</li>
+                        <li>El archivo debe contener las columnas: marca, modelo, medida, precio_venta, stock_actual</li>
+                        <li>Puedes descargar una plantilla de ejemplo para facilitar el proceso</li>
+                    </ul>
+                    
+                    <div class="template-download">
+                        <button onclick="descargarPlantilla()" class="btn btn-outline-primary">
+                            📄 Descargar Plantilla CSV
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="file-upload-zone">
+                    <input type="file" id="archivo-importacion" accept=".csv,.xlsx,.xls" style="display: none;">
+                    <div class="upload-area" onclick="document.getElementById('archivo-importacion').click()">
+                        <div class="upload-icon">📁</div>
+                        <p class="upload-text">Haz clic aquí para seleccionar un archivo</p>
+                        <p class="upload-hint">o arrastra y suelta tu archivo CSV/Excel aquí</p>
+                    </div>
+                </div>
+                
+                <div id="archivo-seleccionado" class="file-selected" style="display: none;">
+                    <div class="file-info">
+                        <span class="file-icon">📄</span>
+                        <span id="nombre-archivo">archivo.csv</span>
+                        <span id="tamaño-archivo">1.2 KB</span>
+                    </div>
+                    <button onclick="quitarArchivo()" class="btn btn-sm btn-danger">❌</button>
+                </div>
+            </div>
+
+            <!-- Paso 2: Preview de datos -->
+            <div id="paso-preview" class="import-step" style="display: none;">
+                <div class="preview-info">
+                    <h4>📊 Vista Previa de Datos</h4>
+                    <p>Revisa los datos antes de importar. Los productos con errores serán marcados en rojo.</p>
+                </div>
+                
+                <div class="preview-stats">
+                    <div class="stat-item">
+                        <span class="stat-number" id="total-filas">0</span>
+                        <span class="stat-label">Total Filas</span>
+                    </div>
+                    <div class="stat-item success">
+                        <span class="stat-number" id="filas-validas">0</span>
+                        <span class="stat-label">Válidas</span>
+                    </div>
+                    <div class="stat-item error">
+                        <span class="stat-number" id="filas-error">0</span>
+                        <span class="stat-label">Con Errores</span>
+                    </div>
+                </div>
+                
+                <div class="preview-table-container">
+                    <table id="tabla-preview" class="preview-table">
+                        <thead id="tabla-preview-head">
+                            <!-- Se llenará dinámicamente -->
+                        </thead>
+                        <tbody id="tabla-preview-body">
+                            <!-- Se llenará dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Paso 3: Progreso de importación -->
+            <div id="paso-importacion" class="import-step" style="display: none;">
+                <div class="import-progress">
+                    <h4>⚙️ Importando Productos</h4>
+                    <div class="progress-bar">
+                        <div id="progress-fill" class="progress-fill"></div>
+                    </div>
+                    <p id="progress-text">Procesando productos...</p>
+                    <div id="import-results" style="display: none;">
+                        <h5>✅ Importación Completada</h5>
+                        <ul id="results-list"></ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button onclick="cerrarModal('modal-importacion')" class="btn btn-secondary">Cancelar</button>
+                <button id="btn-siguiente-paso" onclick="siguientePaso()" class="btn btn-primary" disabled>
+                    Siguiente
+                </button>
+                <button id="btn-anterior-paso" onclick="anteriorPaso()" class="btn btn-secondary" style="display: none;">
+                    Anterior
+                </button>
+                <button id="btn-importar" onclick="ejecutarImportacion()" class="btn btn-success" style="display: none;">
+                    🚀 Importar Productos
+                </button>
+                <button id="btn-cerrar-importacion" onclick="cerrarModal('modal-importacion')" class="btn btn-primary" style="display: none;">
+                    ✅ Cerrar
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script src="/js/utils.js"></script>
     <script src="/js/admin-inventario.js"></script>
+    <script>
+        // Inicializar footer unificado
+        document.addEventListener('DOMContentLoaded', function() {
+            renderFooter({ type: 'dashboard' });
+        });
+    </script>
 </body>
 </html>

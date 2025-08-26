@@ -9,6 +9,14 @@ document.addEventListener('DOMContentLoaded', async function() {
     AppUtils.cargarVersion();
     setupEventListeners();
     
+    // Debug: Verificar que las funciones estén disponibles
+    console.log('Functions check:', {
+        editarProducto: typeof window.editarProducto,
+        verDetalleProducto: typeof window.verDetalleProducto,
+        eliminarProducto: typeof window.eliminarProducto,
+        cerrarModal: typeof window.cerrarModal
+    });
+    
     // Verificar si estamos en modo demo (sin autenticación)
     const esDemo = window.location.pathname.includes('demo');
     
@@ -49,6 +57,81 @@ function setupEventListeners() {
     // Paginación
     document.getElementById('btn-anterior').addEventListener('click', () => cambiarPagina(-1));
     document.getElementById('btn-siguiente').addEventListener('click', () => cambiarPagina(1));
+    
+    // Event listeners para drag & drop (importación masiva)
+    const uploadArea = document.querySelector('.upload-area');
+    if (uploadArea) {
+        uploadArea.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            this.classList.add('dragover');
+        });
+        
+        uploadArea.addEventListener('dragleave', function(e) {
+            e.preventDefault();
+            this.classList.remove('dragover');
+        });
+        
+        uploadArea.addEventListener('drop', function(e) {
+            e.preventDefault();
+            this.classList.remove('dragover');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                document.getElementById('archivo-importacion').files = files;
+                manejarArchivoSeleccionado(files[0]);
+            }
+        });
+    }
+    
+    // Event listener para selección de archivo
+    const archivoInput = document.getElementById('archivo-importacion');
+    if (archivoInput) {
+        archivoInput.addEventListener('change', function(e) {
+            if (e.target.files.length > 0) {
+                manejarArchivoSeleccionado(e.target.files[0]);
+            }
+        });
+    }
+    
+    // Event delegation para botones de productos (más confiable para contenido dinámico)
+    document.addEventListener('click', function(e) {
+        const button = e.target.closest('[data-action]');
+        if (!button) return;
+        
+        const action = button.getAttribute('data-action');
+        const productoId = button.getAttribute('data-producto-id');
+        
+        console.log('Button clicked:', { action, productoId });
+        
+        switch(action) {
+            case 'editar':
+                editarProducto(productoId);
+                break;
+            case 'ver':
+                verDetalleProducto(productoId);
+                break;
+            case 'eliminar':
+                eliminarProducto(productoId);
+                break;
+        }
+    });
+    
+    // Event listener específico para botones de cerrar modal
+    document.addEventListener('click', function(e) {
+        // Botón cancelar en modal de producto
+        if (e.target.matches('button[onclick*="cerrarModal"]')) {
+            console.log('Cerrar modal button clicked');
+            cerrarModal();
+            return;
+        }
+        
+        // Botón nuevo producto
+        if (e.target.matches('button[onclick*="mostrarFormularioNuevo"]')) {
+            console.log('Nuevo producto button clicked');
+            mostrarFormularioNuevo();
+            return;
+        }
+    });
 }
 
 async function verificarAutenticacion() {
@@ -75,13 +158,15 @@ async function verificarAutenticacion() {
         }
         
         const data = await response.json();
-        if (data.rol !== 'admin') {
+        console.log('Datos del usuario:', data); // Debug para ver la estructura
+        
+        if (data.user.rol !== 'admin') {
             alert('Acceso denegado. Solo administradores pueden acceder al inventario.');
             window.location.href = '/empleado/dashboard';
             return false;
         }
         
-        document.getElementById('usuario-nombre').textContent = data.nombre || 'Administrador';
+        document.getElementById('usuario-nombre').textContent = data.user.nombre || 'Administrador';
         return true;
     } catch (error) {
         console.error('Error verificando autenticación:', error);
@@ -164,7 +249,7 @@ function generarProductosSimulados() {
             stock_actual: stock,
             stock_minimo: 5,
             proveedor: `Proveedor ${Math.floor(Math.random() * 3) + 1}`,
-            imagen_url: `https://via.placeholder.com/100x100/3498db/ffffff?text=${marca.charAt(0)}`,
+            imagen_url: 'https://tinyurl.com/bdhn9ubh',
             activo: true,
             fecha_creacion: new Date(Date.now() - Math.random() * 90 * 24 * 60 * 60 * 1000),
             fecha_actualizacion: new Date()
@@ -219,7 +304,7 @@ function renderizarProductos() {
             <tr class="${estadoClass}">
                 <td class="producto-imagen">
                     <img src="${producto.imagen_url}" alt="${producto.modelo}" 
-                         onerror="this.src='/images/llanta-default.png'" loading="lazy">
+                         onerror="this.src='https://tinyurl.com/bdhn9ubh'" loading="lazy">
                 </td>
                 <td class="marca">${producto.marca}</td>
                 <td class="modelo">${producto.modelo}</td>
@@ -227,26 +312,26 @@ function renderizarProductos() {
                 <td class="stock">
                     <span class="stock-numero ${stockClass}">
                         ${producto.stock_actual}
-                        ${producto.stock_actual <= producto.stock_minimo ? '⚠️' : ''}
+                        ${producto.stock_actual <= producto.stock_minimo ? ' ⚠️' : ''}
                     </span>
-                    <small>min: ${producto.stock_minimo}</small>
+                    <br><small>min: ${producto.stock_minimo}</small>
                 </td>
                 <td class="precio">
                     <strong>${AppUtils.formatearPrecio(producto.precio_venta)}</strong>
-                    ${producto.precio_compra ? `<small>Compra: ${AppUtils.formatearPrecio(producto.precio_compra)}</small>` : ''}
+                    ${producto.precio_compra ? `<br><small>Compra: ${AppUtils.formatearPrecio(producto.precio_compra)}</small>` : ''}
                 </td>
                 <td class="estado">
                     ${getEstadoProducto(producto)}
                 </td>
                 <td class="acciones">
                     <div class="btn-group">
-                        <button onclick="editarProducto('${producto.id}')" class="btn btn-primary btn-sm" title="Editar">
+                        <button data-action="editar" data-producto-id="${producto.id}" class="btn btn-primary btn-sm" title="Editar">
                             ✏️
                         </button>
-                        <button onclick="verDetalleProducto('${producto.id}')" class="btn btn-info btn-sm" title="Ver detalles">
+                        <button data-action="ver" data-producto-id="${producto.id}" class="btn btn-info btn-sm" title="Ver detalles">
                             👁️
                         </button>
-                        <button onclick="eliminarProducto('${producto.id}')" class="btn btn-danger btn-sm" title="Eliminar">
+                        <button data-action="eliminar" data-producto-id="${producto.id}" class="btn btn-danger btn-sm" title="Eliminar">
                             🗑️
                         </button>
                     </div>
@@ -355,12 +440,30 @@ function mostrarFormularioNuevo() {
     document.getElementById('titulo-modal').textContent = 'Nuevo Producto';
     document.getElementById('form-producto').reset();
     document.getElementById('producto-id').value = '';
+    // Pre-llenar con imagen por defecto
+    document.getElementById('producto-imagen').value = 'https://tinyurl.com/bdhn9ubh';
     document.getElementById('modal-producto').classList.remove('hidden');
 }
 
 function editarProducto(id) {
-    const producto = productos.find(p => p.id === id);
-    if (!producto) return;
+    console.log('editarProducto called with id:', id);
+    console.log('productos array length:', productos.length);
+    
+    // Asegurar que el ID sea string para comparación
+    const productoId = String(id);
+    const producto = productos.find(p => String(p.id) === productoId);
+    
+    if (!producto) {
+        console.log('Producto no encontrado:', id);
+        console.log('Productos disponibles:', productos.map(p => ({ id: p.id, marca: p.marca, modelo: p.modelo })));
+        
+        if (window.mostrarInformacion) {
+            mostrarInformacion('Error', 'Producto no encontrado: ' + id, 'error');
+        } else {
+            alert('Producto no encontrado: ' + id);
+        }
+        return;
+    }
     
     document.getElementById('titulo-modal').textContent = 'Editar Producto';
     document.getElementById('producto-id').value = producto.id;
@@ -464,13 +567,42 @@ async function guardarProducto(event) {
 }
 
 function eliminarProducto(id) {
-    const producto = productos.find(p => p.id === id);
-    if (!producto) return;
+    console.log('eliminarProducto called with id:', id);
+    console.log('productos array length:', productos.length);
     
-    productoAEliminar = id;
-    document.getElementById('producto-eliminar-nombre').textContent = 
-        `${producto.marca} ${producto.modelo} - ${producto.medida}`;
-    document.getElementById('modal-eliminar').classList.remove('hidden');
+    // Asegurar que el ID sea string para comparación
+    const productoId = String(id);
+    const producto = productos.find(p => String(p.id) === productoId);
+    
+    if (!producto) {
+        console.log('Producto no encontrado:', id);
+        console.log('Productos disponibles:', productos.map(p => ({ id: p.id, marca: p.marca, modelo: p.modelo })));
+        
+        if (window.mostrarInformacion) {
+            mostrarInformacion('Error', 'Producto no encontrado: ' + id, 'error');
+        } else {
+            alert('Producto no encontrado: ' + id);
+        }
+        return;
+    }
+    
+    // Usar modal de confirmación profesional si está disponible
+    if (window.mostrarConfirmacion) {
+        mostrarConfirmacion(
+            '🗑️ Eliminar Producto',
+            `¿Está seguro de que desea eliminar el producto "${producto.marca} ${producto.modelo} - ${producto.medida}"?\n\nEsta acción no se puede deshacer.`,
+            async () => {
+                productoAEliminar = id;
+                await confirmarEliminacion();
+            }
+        );
+    } else {
+        // Fallback a confirm tradicional
+        if (confirm(`¿Está seguro de eliminar ${producto.marca} ${producto.modelo}?`)) {
+            productoAEliminar = id;
+            confirmarEliminacion();
+        }
+    }
 }
 
 async function confirmarEliminacion() {
@@ -515,16 +647,43 @@ async function confirmarEliminacion() {
 }
 
 function verDetalleProducto(id) {
-    const producto = productos.find(p => p.id === id);
-    if (!producto) return;
+    console.log('verDetalleProducto called with id:', id);
+    console.log('productos array length:', productos.length);
     
-    // Por ahora mostrar un alert simple - más tarde podríamos crear un modal detallado
-    alert(`Detalles del producto:\n\nMarca: ${producto.marca}\nModelo: ${producto.modelo}\nMedida: ${producto.medida}\nStock: ${producto.stock_actual}\nPrecio: $${producto.precio_venta.toLocaleString('es-CO')}\nProveedor: ${producto.proveedor || 'N/A'}\nCreado: ${producto.fecha_creacion.toLocaleDateString()}`);
+    // Asegurar que el ID sea string para comparación
+    const productoId = String(id);
+    const producto = productos.find(p => String(p.id) === productoId);
+    
+    if (!producto) {
+        console.log('Producto no encontrado:', id);
+        console.log('Productos disponibles:', productos.map(p => ({ id: p.id, marca: p.marca, modelo: p.modelo })));
+        
+        if (window.mostrarInformacion) {
+            mostrarInformacion('Error', 'Producto no encontrado: ' + id, 'error');
+        } else {
+            alert('Producto no encontrado: ' + id);
+        }
+        return;
+    }
+    
+    // Usar el modal profesional si está disponible, sino usar alert
+    if (window.mostrarDetalleProductoProfesional) {
+        mostrarDetalleProductoProfesional(producto);
+    } else {
+        alert(`Detalles del producto:\n\nMarca: ${producto.marca}\nModelo: ${producto.modelo}\nMedida: ${producto.medida}\nStock: ${producto.stock_actual}\nPrecio: $${producto.precio_venta.toLocaleString('es-CO')}\nProveedor: ${producto.proveedor || 'N/A'}`);
+    }
 }
 
 // Funciones de utilidad específicas
-function cerrarModal() {
-    document.getElementById('modal-producto').classList.add('hidden');
+function cerrarModal(modalId = 'modal-producto') {
+    console.log('cerrarModal called with modalId:', modalId);
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        console.log('Modal found, adding hidden class');
+        modal.classList.add('hidden');
+    } else {
+        console.log('Modal not found:', modalId);
+    }
 }
 
 function cerrarModalEliminar() {
@@ -624,14 +783,34 @@ function logout() {
     const esDemo = window.location.pathname.includes('demo');
     
     if (esDemo) {
-        if (AppUtils.confirmar('¿Regresar al inicio?')) {
-            window.location.href = '/';
+        if (window.mostrarConfirmacion) {
+            mostrarConfirmacion(
+                '🚪 Salir del Demo',
+                '¿Desea regresar al inicio?',
+                () => {
+                    window.location.href = '/';
+                }
+            );
+        } else {
+            if (confirm('¿Regresar al inicio?')) {
+                window.location.href = '/';
+            }
         }
         return;
     }
     
-    // Usar logout global de AppUtils
-    window.logout();
+    // Usar modal de confirmación profesional
+    if (window.mostrarConfirmacion) {
+        mostrarConfirmacion(
+            '🚪 Cerrar Sesión',
+            '¿Está seguro de que desea cerrar sesión?',
+            () => {
+                AuthService.ejecutarLogout();
+            }
+        );
+    } else {
+        AuthService.logout();
+    }
 }
 
 // Validación específica de productos
@@ -760,4 +939,597 @@ function actualizarVistaPrevia(url) {
 function cerrarVistaPrevia() {
     document.getElementById('imagen-preview').style.display = 'none';
 }
+
+// ===== FUNCIONES DE IMPORTACIÓN MASIVA =====
+
+let pasoActual = 1;
+let archivoImportacion = null;
+let datosParseados = [];
+
+function mostrarImportacionMasiva() {
+    // Resetear estado
+    pasoActual = 1;
+    archivoImportacion = null;
+    datosParseados = [];
+    
+    // Resetear pasos
+    resetearPasos();
+    
+    // Mostrar modal
+    document.getElementById('modal-importacion').classList.remove('hidden');
+}
+
+function resetearPasos() {
+    // Resetear indicadores de paso
+    document.querySelectorAll('.step').forEach((step, index) => {
+        step.classList.remove('active', 'completed');
+        if (index === 0) step.classList.add('active');
+    });
+    
+    // Mostrar solo el primer paso
+    document.querySelectorAll('.import-step').forEach((step, index) => {
+        step.style.display = index === 0 ? 'block' : 'none';
+    });
+    
+    // Resetear botones
+    document.getElementById('btn-siguiente-paso').disabled = true;
+    document.getElementById('btn-anterior-paso').style.display = 'none';
+    document.getElementById('btn-importar').style.display = 'none';
+    
+    // Limpiar archivo seleccionado
+    document.getElementById('archivo-importacion').value = '';
+    document.getElementById('archivo-seleccionado').style.display = 'none';
+}
+
+function siguientePaso() {
+    if (pasoActual === 1) {
+        // Procesar archivo
+        procesarArchivo();
+    } else if (pasoActual === 2) {
+        // Ir a paso de importación
+        pasoActual = 3;
+        actualizarPasos();
+    }
+}
+
+function anteriorPaso() {
+    if (pasoActual > 1) {
+        pasoActual--;
+        actualizarPasos();
+    }
+}
+
+function actualizarPasos() {
+    // Actualizar indicadores
+    document.querySelectorAll('.step').forEach((step, index) => {
+        step.classList.remove('active', 'completed');
+        if (index < pasoActual - 1) {
+            step.classList.add('completed');
+        } else if (index === pasoActual - 1) {
+            step.classList.add('active');
+        }
+    });
+    
+    // Mostrar paso actual
+    document.querySelectorAll('.import-step').forEach((step, index) => {
+        step.style.display = index === pasoActual - 1 ? 'block' : 'none';
+    });
+    
+    // Actualizar botones
+    document.getElementById('btn-anterior-paso').style.display = pasoActual > 1 ? 'inline-block' : 'none';
+    document.getElementById('btn-siguiente-paso').style.display = pasoActual < 3 ? 'inline-block' : 'none';
+    document.getElementById('btn-importar').style.display = pasoActual === 3 ? 'inline-block' : 'none';
+    
+    if (pasoActual === 2) {
+        document.getElementById('btn-siguiente-paso').disabled = false;
+    }
+}
+
+// Función para manejar archivo seleccionado
+function manejarArchivoSeleccionado(archivo) {
+    archivoImportacion = archivo;
+    
+    // Validar tipo de archivo
+    const tiposPermitidos = ['.csv', '.xlsx', '.xls'];
+    const extension = archivo.name.toLowerCase().substring(archivo.name.lastIndexOf('.'));
+    
+    if (!tiposPermitidos.includes(extension)) {
+        AppUtils.mostrarMensaje('Tipo de archivo no válido. Use CSV o Excel (.xlsx, .xls)', 'error');
+        return;
+    }
+    
+    // Mostrar información del archivo
+    document.getElementById('nombre-archivo').textContent = archivo.name;
+    document.getElementById('tamaño-archivo').textContent = formatearTamaño(archivo.size);
+    document.getElementById('archivo-seleccionado').style.display = 'flex';
+    
+    // Habilitar botón siguiente
+    document.getElementById('btn-siguiente-paso').disabled = false;
+}
+
+function formatearTamaño(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+function quitarArchivo() {
+    archivoImportacion = null;
+    document.getElementById('archivo-importacion').value = '';
+    document.getElementById('archivo-seleccionado').style.display = 'none';
+    document.getElementById('btn-siguiente-paso').disabled = true;
+}
+
+async function procesarArchivo() {
+    if (!archivoImportacion) return;
+    
+    try {
+        AppUtils.mostrarMensaje('Procesando archivo...', 'info');
+        
+        const extension = archivoImportacion.name.toLowerCase().substring(archivoImportacion.name.lastIndexOf('.'));
+        let datos = [];
+        
+        if (extension === '.csv') {
+            datos = await procesarCSV(archivoImportacion);
+        } else {
+            datos = await procesarExcel(archivoImportacion);
+        }
+        
+        if (datos.length === 0) {
+            AppUtils.mostrarMensaje('El archivo está vacío o no tiene datos válidos', 'error');
+            return;
+        }
+        
+        datosParseados = validarDatos(datos);
+        mostrarPreview();
+        pasoActual = 2;
+        actualizarPasos();
+        
+    } catch (error) {
+        console.error('Error procesando archivo:', error);
+        AppUtils.mostrarMensaje('Error al procesar el archivo: ' + error.message, 'error');
+    }
+}
+
+async function procesarCSV(archivo) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const csv = e.target.result;
+                const lineas = csv.split('\n').filter(linea => linea.trim());
+                
+                if (lineas.length < 2) {
+                    reject(new Error('El archivo CSV debe tener al menos una fila de encabezados y una fila de datos'));
+                    return;
+                }
+                
+                const encabezados = lineas[0].split(',').map(h => h.trim().replace(/"/g, ''));
+                const datos = [];
+                
+                for (let i = 1; i < lineas.length; i++) {
+                    const valores = lineas[i].split(',').map(v => v.trim().replace(/"/g, ''));
+                    const fila = {};
+                    
+                    encabezados.forEach((encabezado, index) => {
+                        fila[encabezado] = valores[index] || '';
+                    });
+                    
+                    datos.push(fila);
+                }
+                
+                resolve(datos);
+            } catch (error) {
+                reject(error);
+            }
+        };
+        reader.onerror = () => reject(new Error('Error al leer el archivo'));
+        reader.readAsText(archivo);
+    });
+}
+
+async function procesarExcel(archivo) {
+    // Para Excel necesitaríamos una librería como SheetJS
+    // Por simplicidad, vamos a mostrar un mensaje para usar CSV
+    throw new Error('Para archivos Excel, por favor convierta a CSV primero. Próximamente soporte nativo para Excel.');
+}
+
+function validarDatos(datos) {
+    const columnasRequeridas = ['marca', 'modelo', 'medida', 'precio_venta', 'stock_actual'];
+    const datosValidados = [];
+    
+    datos.forEach((fila, index) => {
+        const errores = [];
+        const filaValidada = { ...fila, _errores: [], _valida: true, _numeroFila: index + 2 };
+        
+        // Validar columnas requeridas
+        columnasRequeridas.forEach(col => {
+            if (!fila[col] || fila[col].toString().trim() === '') {
+                errores.push(`${col} es requerido`);
+            }
+        });
+        
+        // Validar formato de medida
+        if (fila.medida && !/^\d{3}\/\d{2}R\d{2}$/.test(fila.medida)) {
+            errores.push('Medida debe tener formato 205/55R16');
+        }
+        
+        // Validar precio
+        if (fila.precio_venta && (isNaN(fila.precio_venta) || parseFloat(fila.precio_venta) <= 0)) {
+            errores.push('Precio debe ser un número mayor a 0');
+        }
+        
+        // Validar stock
+        if (fila.stock_actual && (isNaN(fila.stock_actual) || parseInt(fila.stock_actual) < 0)) {
+            errores.push('Stock debe ser un número entero positivo');
+        }
+        
+        if (errores.length > 0) {
+            filaValidada._valida = false;
+            filaValidada._errores = errores;
+        }
+        
+        datosValidados.push(filaValidada);
+    });
+    
+    return datosValidados;
+}
+
+function mostrarPreview() {
+    const totalFilas = datosParseados.length;
+    const filasValidas = datosParseados.filter(f => f._valida).length;
+    const filasError = totalFilas - filasValidas;
+    
+    // Actualizar estadísticas
+    document.getElementById('total-filas').textContent = totalFilas;
+    document.getElementById('filas-validas').textContent = filasValidas;
+    document.getElementById('filas-error').textContent = filasError;
+    
+    // Mostrar tabla de preview
+    const tabla = document.getElementById('tabla-preview');
+    const thead = document.getElementById('tabla-preview-head');
+    const tbody = document.getElementById('tabla-preview-body');
+    
+    // Limpiar tabla
+    thead.innerHTML = '';
+    tbody.innerHTML = '';
+    
+    if (datosParseados.length === 0) return;
+    
+    // Crear encabezados
+    const primeraFila = datosParseados[0];
+    const columnas = Object.keys(primeraFila).filter(k => !k.startsWith('_'));
+    
+    const headerRow = document.createElement('tr');
+    headerRow.innerHTML = '<th>#</th>' + columnas.map(col => `<th>${col}</th>`).join('') + '<th>Errores</th>';
+    thead.appendChild(headerRow);
+    
+    // Crear filas de datos (mostrar solo las primeras 10 para performance)
+    datosParseados.slice(0, 10).forEach(fila => {
+        const tr = document.createElement('tr');
+        if (!fila._valida) tr.classList.add('error');
+        
+        let html = `<td>${fila._numeroFila}</td>`;
+        columnas.forEach(col => {
+            const valor = fila[col] || '';
+            html += `<td${!fila._valida && fila._errores.some(e => e.includes(col)) ? ' class="error-cell"' : ''}>${valor}</td>`;
+        });
+        html += `<td>${fila._errores.join(', ')}</td>`;
+        
+        tr.innerHTML = html;
+        tbody.appendChild(tr);
+    });
+    
+    if (datosParseados.length > 10) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td colspan="${columnas.length + 2}" style="text-align: center; font-style: italic; color: #666;">... y ${datosParseados.length - 10} filas más</td>`;
+        tbody.appendChild(tr);
+    }
+}
+
+function descargarPlantilla() {
+    const csvContent = "marca,modelo,medida,descripcion,precio_compra,precio_venta,stock_actual,stock_minimo,proveedor\n" +
+                      "Michelin,Energy XM2,205/55R16,Llanta ecológica para ciudad,800000,950000,10,5,Distribuidor A\n" +
+                      "Bridgestone,Turanza T005,225/60R18,Llanta premium para sedanes,1200000,1400000,8,3,Distribuidor B\n" +
+                      "Continental,PowerContact 2,195/65R15,Llanta deportiva,700000,850000,15,5,Distribuidor C";
+    
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'plantilla-productos.csv');
+    link.style.visibility = 'hidden';
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+async function ejecutarImportacion() {
+    const filasValidas = datosParseados.filter(f => f._valida);
+    
+    if (filasValidas.length === 0) {
+        AppUtils.mostrarMensaje('No hay productos válidos para importar', 'error');
+        return;
+    }
+    
+    const confirmacion = await mostrarConfirmacion(
+        '🚀 Confirmar Importación',
+        `¿Desea importar ${filasValidas.length} productos válidos?`,
+        () => true
+    );
+    if (!confirmacion) return;
+    
+    try {
+        const progressFill = document.getElementById('progress-fill');
+        const progressText = document.getElementById('progress-text');
+        const importResults = document.getElementById('import-results');
+        const resultsList = document.getElementById('results-list');
+        
+        progressFill.style.width = '0%';
+        progressText.textContent = 'Iniciando importación...';
+        importResults.style.display = 'none';
+        
+        // Procesar en lotes de 5 productos para mostrar progreso
+        const batchSize = 5;
+        const batches = [];
+        for (let i = 0; i < filasValidas.length; i += batchSize) {
+            batches.push(filasValidas.slice(i, i + batchSize));
+        }
+        
+        let procesados = 0;
+        let exitosos = 0;
+        let errores = 0;
+        const resultados = [];
+        
+        for (let i = 0; i < batches.length; i++) {
+            const batch = batches[i];
+            
+            for (const producto of batch) {
+                try {
+                    await importarProducto(producto);
+                    exitosos++;
+                    resultados.push(`✅ ${producto.marca} ${producto.modelo} - Importado correctamente`);
+                } catch (error) {
+                    errores++;
+                    resultados.push(`❌ ${producto.marca} ${producto.modelo} - Error: ${error.message}`);
+                }
+                
+                procesados++;
+                const porcentaje = Math.round((procesados / filasValidas.length) * 100);
+                progressFill.style.width = `${porcentaje}%`;
+                progressText.textContent = `Procesando producto ${procesados} de ${filasValidas.length}...`;
+                
+                // Pequeña pausa para mostrar progreso
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+        }
+        
+        // Mostrar resultados
+        progressText.textContent = 'Importación completada';
+        resultsList.innerHTML = '';
+        
+        resultados.forEach(resultado => {
+            const li = document.createElement('li');
+            li.textContent = resultado;
+            resultsList.appendChild(li);
+        });
+        
+        importResults.style.display = 'block';
+        
+        // Mostrar botón de cerrar y ocultar otros botones
+        document.getElementById('btn-importar').style.display = 'none';
+        document.getElementById('btn-anterior-paso').style.display = 'none';
+        document.getElementById('btn-cerrar-importacion').style.display = 'inline-block';
+        
+        // Recargar inventario
+        setTimeout(() => {
+            cargarProductos();
+            AppUtils.mostrarMensaje(`Importación completada: ${exitosos} exitosos, ${errores} errores`, exitosos > 0 ? 'success' : 'error');
+        }, 2000);
+        
+    } catch (error) {
+        console.error('Error en importación:', error);
+        AppUtils.mostrarMensaje('Error durante la importación: ' + error.message, 'error');
+    }
+}
+
+async function importarProducto(producto) {
+    const token = localStorage.getItem('empleadoToken');
+    
+    const data = {
+        marca: producto.marca,
+        modelo: producto.modelo,
+        medida: producto.medida,
+        descripcion: producto.descripcion || '',
+        precio_compra: producto.precio_compra || null,
+        precio_venta: parseFloat(producto.precio_venta),
+        stock_actual: parseInt(producto.stock_actual) || 0,
+        stock_minimo: parseInt(producto.stock_minimo) || 5,
+        proveedor: producto.proveedor || null
+    };
+    
+    const response = await fetch('/api/inventario/productos', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(data)
+    });
+    
+    if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Error al importar producto');
+    }
+    
+    return response.json();
+}
+
+// Función para cerrar modales (reutilizable) - Versión duplicada eliminada
+// Se mantiene solo la versión anterior con debug
+
+// ===== SISTEMA DE MODALES PROFESIONALES =====
+
+// Modal de confirmación profesional
+function mostrarConfirmacion(titulo, mensaje, onConfirmar, onCancelar = null) {
+    return new Promise((resolve) => {
+        document.getElementById('confirmacion-titulo').textContent = titulo;
+        document.getElementById('confirmacion-mensaje').textContent = mensaje;
+        
+        const btnSi = document.getElementById('btn-confirmar-si');
+        const btnNo = document.getElementById('btn-confirmar-no');
+        
+        // Limpiar event listeners anteriores
+        btnSi.replaceWith(btnSi.cloneNode(true));
+        btnNo.replaceWith(btnNo.cloneNode(true));
+        
+        // Obtener referencias nuevas
+        const newBtnSi = document.getElementById('btn-confirmar-si');
+        const newBtnNo = document.getElementById('btn-confirmar-no');
+        
+        newBtnSi.addEventListener('click', () => {
+            cerrarModal('modal-confirmacion');
+            if (onConfirmar) onConfirmar();
+            resolve(true);
+        });
+        
+        newBtnNo.addEventListener('click', () => {
+            cerrarModal('modal-confirmacion');
+            if (onCancelar) onCancelar();
+            resolve(false);
+        });
+        
+        document.getElementById('modal-confirmacion').classList.remove('hidden');
+    });
+}
+
+// Modal de información profesional
+function mostrarInformacion(titulo, mensaje, tipo = 'info') {
+    return new Promise((resolve) => {
+        const iconos = {
+            'info': 'ℹ️',
+            'success': '✅',
+            'warning': '⚠️',
+            'error': '❌'
+        };
+        
+        document.getElementById('informacion-titulo').textContent = `${iconos[tipo]} ${titulo}`;
+        document.getElementById('informacion-mensaje').innerHTML = mensaje;
+        
+        const btnCerrar = document.getElementById('btn-info-cerrar');
+        btnCerrar.replaceWith(btnCerrar.cloneNode(true));
+        
+        const newBtnCerrar = document.getElementById('btn-info-cerrar');
+        newBtnCerrar.addEventListener('click', () => {
+            cerrarModal('modal-informacion');
+            resolve();
+        });
+        
+        document.getElementById('modal-informacion').classList.remove('hidden');
+    });
+}
+
+// Modal de detalles de producto profesional
+function mostrarDetalleProductoProfesional(producto) {
+    const fechaCreacion = new Date(producto.fecha_creacion).toLocaleDateString('es-CO');
+    const fechaActualizacion = new Date(producto.fecha_actualizacion).toLocaleDateString('es-CO');
+    
+    const contenido = `
+        <div class="product-detail-grid">
+            <div class="detail-section">
+                <h4>📦 Información Básica</h4>
+                <div class="detail-item">
+                    <strong>Marca:</strong> ${producto.marca}
+                </div>
+                <div class="detail-item">
+                    <strong>Modelo:</strong> ${producto.modelo}
+                </div>
+                <div class="detail-item">
+                    <strong>Medida:</strong> <span class="badge">${producto.medida}</span>
+                </div>
+                <div class="detail-item">
+                    <strong>Estado:</strong> ${getEstadoProducto(producto)}
+                </div>
+            </div>
+            
+            <div class="detail-section">
+                <h4>💰 Información Financiera</h4>
+                <div class="detail-item">
+                    <strong>Precio Venta:</strong> <span class="price-highlight">${AppUtils.formatearPrecio(producto.precio_venta)}</span>
+                </div>
+                ${producto.precio_compra ? `<div class="detail-item">
+                    <strong>Precio Compra:</strong> ${AppUtils.formatearPrecio(producto.precio_compra)}
+                </div>` : ''}
+                <div class="detail-item">
+                    <strong>Margen:</strong> ${producto.precio_compra ? 
+                        ((producto.precio_venta - producto.precio_compra) / producto.precio_compra * 100).toFixed(1) + '%' : 
+                        'N/A'}
+                </div>
+            </div>
+            
+            <div class="detail-section">
+                <h4>📊 Inventario</h4>
+                <div class="detail-item">
+                    <strong>Stock Actual:</strong> <span class="${producto.stock_actual <= producto.stock_minimo ? 'text-warning' : ''}">${producto.stock_actual}</span>
+                </div>
+                <div class="detail-item">
+                    <strong>Stock Mínimo:</strong> ${producto.stock_minimo}
+                </div>
+                <div class="detail-item">
+                    <strong>Valor Inventario:</strong> ${AppUtils.formatearPrecio(producto.stock_actual * producto.precio_venta)}
+                </div>
+            </div>
+            
+            <div class="detail-section">
+                <h4>🏢 Proveedor y Otros</h4>
+                <div class="detail-item">
+                    <strong>Proveedor:</strong> ${producto.proveedor || 'No especificado'}
+                </div>
+                <div class="detail-item">
+                    <strong>Descripción:</strong> ${producto.descripcion || 'Sin descripción'}
+                </div>
+            </div>
+            
+            <div class="detail-section">
+                <h4>📅 Fechas</h4>
+                <div class="detail-item">
+                    <strong>Fecha Creación:</strong> ${fechaCreacion}
+                </div>
+                <div class="detail-item">
+                    <strong>Última Actualización:</strong> ${fechaActualizacion}
+                </div>
+            </div>
+            
+            ${producto.imagen_url ? `
+            <div class="detail-section full-width">
+                <h4>🖼️ Imagen</h4>
+                <div class="product-image-detail">
+                    <img src="${producto.imagen_url}" alt="${producto.modelo}" 
+                         onerror="this.src='https://tinyurl.com/bdhn9ubh'">
+                </div>
+            </div>` : ''}
+        </div>
+    `;
+    
+    document.getElementById('detalle-titulo').textContent = `📋 ${producto.marca} ${producto.modelo}`;
+    document.getElementById('detalle-contenido').innerHTML = contenido;
+    document.getElementById('modal-detalle-producto').classList.remove('hidden');
+}
+
+// Hacer todas las funciones disponibles globalmente
+window.editarProducto = editarProducto;
+window.verDetalleProducto = verDetalleProducto; 
+window.eliminarProducto = eliminarProducto;
+window.cerrarModal = cerrarModal;
+window.cerrarModalEliminar = cerrarModalEliminar;
+window.confirmarEliminacion = confirmarEliminacion;
+window.mostrarFormularioNuevo = mostrarFormularioNuevo;
+window.logout = logout;
+window.mostrarConfirmacion = mostrarConfirmacion;
+window.mostrarInformacion = mostrarInformacion;
+window.mostrarDetalleProductoProfesional = mostrarDetalleProductoProfesional;
 

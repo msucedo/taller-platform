@@ -1,4 +1,20 @@
 require('dotenv').config();
+
+// Polyfills completos para APIs web (requerido por google-auth-library v10+)
+require('whatwg-fetch');
+require('web-streams-polyfill/polyfill');
+
+const fetch = require('node-fetch');
+const FormData = require('form-data');
+const { Blob } = require('buffer');
+
+global.fetch = fetch;
+global.Headers = fetch.Headers;
+global.Request = fetch.Request;
+global.Response = fetch.Response;
+global.FormData = FormData;
+global.Blob = Blob;
+
 const express = require('express');
 const sqlite3 = require('sqlite3').verbose();
 const cors = require('cors');
@@ -9,7 +25,12 @@ const fs = require('fs');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const { body, validationResult, param } = require('express-validator');
+const { OAuth2Client } = require('google-auth-library');
+const jwt = require('jsonwebtoken');
 const { initDatabase, dbPath, generateTrackerCode, generateSessionToken, hashPassword, comparePassword } = require('./database/init');
+
+// Configuración de Google OAuth
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -20,13 +41,18 @@ app.use(helmet({
     contentSecurityPolicy: {
         directives: {
             defaultSrc: ["'self'"],
-            styleSrc: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com"],
-            scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://cdnjs.cloudflare.com"],
-            scriptSrcAttr: ["'unsafe-inline'"], // Permitir onclick y similares
+            styleSrc: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com", "https://accounts.google.com"],
+            scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://cdnjs.cloudflare.com", "https://accounts.google.com", "https://apis.google.com"],
+            scriptSrcAttr: ["'unsafe-inline'"],
             imgSrc: ["'self'", "data:", "https:", "via.placeholder.com"],
             fontSrc: ["'self'", "https:"],
+            connectSrc: ["'self'", "https://accounts.google.com", "https://oauth2.googleapis.com"],
+            frameSrc: ["'self'", "https://accounts.google.com"],
+            childSrc: ["'self'", "https://accounts.google.com"],
         },
     },
+    crossOriginOpenerPolicy: false,
+    crossOriginEmbedderPolicy: false
 }));
 
 // Rate limiting
@@ -142,14 +168,14 @@ app.post('/api/solicitudes', [
         .trim()
         .isLength({ min: 2, max: 100 })
         .withMessage('El nombre debe tener entre 2 y 100 caracteres')
-        .matches(/^[a-zA-ZÀ-ÿ\s]+$/)
-        .withMessage('El nombre solo puede contener letras y espacios'),
+        .matches(/^[a-zA-ZÀ-ÿáéíóúÁÉÍÓÚñÑ\s\.\']+$/)
+        .withMessage('El nombre contiene caracteres no permitidos'),
     body('proveedor_email')
         .isEmail()
         .withMessage('Debe ser un email válido')
         .normalizeEmail(),
     body('proveedor_telefono')
-        .optional()
+        .optional({ nullable: true, checkFalsy: true })
         .matches(/^[\d\s\-\+\(\)]+$/)
         .withMessage('Teléfono debe contener solo números y símbolos válidos'),
     body('tipo_servicio')
@@ -179,24 +205,38 @@ app.post('/api/solicitudes', [
     const trackerCode = generateTrackerCode();
     const db = new sqlite3.Database(dbPath);
     
-    const stmt = db.prepare(`INSERT INTO solicitudes 
-        (tracker_code, proveedor_nombre, proveedor_email, proveedor_telefono, empresa, tipo_servicio, descripcion, urgencia, fecha_preferida, presupuesto_estimado) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
-    
-    stmt.run([trackerCode, proveedor_nombre, proveedor_email, proveedor_telefono, empresa, tipo_servicio, descripcion, urgencia, fecha_preferida, presupuesto_estimado], function(err) {
+    // Buscar si existe un proveedor OAuth con este email para vincularlo automáticamente
+    db.get('SELECT id FROM proveedores_oauth WHERE email = ?', [proveedor_email], (err, proveedor) => {
         if (err) {
-            res.status(500).json({ error: err.message });
+            console.error('Error buscando proveedor OAuth:', err);
+            res.status(500).json({ error: 'Error de servidor' });
+            db.close();
             return;
         }
-        res.json({ 
-            id: this.lastID,
-            tracker: trackerCode,
-            message: 'Solicitud enviada correctamente'
+        
+        const proveedorOauthId = proveedor ? proveedor.id : null;
+        
+        const stmt = db.prepare(`INSERT INTO solicitudes 
+            (tracker_code, proveedor_nombre, proveedor_email, proveedor_telefono, proveedor_oauth_id, empresa, tipo_servicio, descripcion, urgencia, fecha_preferida, presupuesto_estimado) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+        
+        stmt.run([trackerCode, proveedor_nombre, proveedor_email, proveedor_telefono, proveedorOauthId, empresa, tipo_servicio, descripcion, urgencia, fecha_preferida, presupuesto_estimado], function(err) {
+            stmt.finalize();
+            
+            if (err) {
+                res.status(500).json({ error: err.message });
+                db.close();
+                return;
+            }
+            
+            res.json({ 
+                id: this.lastID,
+                tracker: trackerCode,
+                message: 'Solicitud enviada correctamente'
+            });
+            db.close();
         });
     });
-    
-    stmt.finalize();
-    db.close();
 });
 
 app.get('/api/solicitudes', (req, res) => {
@@ -284,7 +324,16 @@ app.get('/api/tracker/:code', (req, res) => {
 
 // Portal del proveedor
 app.get('/proveedor', (req, res) => {
-    res.sendFile(path.join(__dirname, 'views', 'proveedor-login.html'));
+    // Leer el archivo HTML y reemplazar el placeholder del Google Client ID
+    fs.readFile(path.join(__dirname, 'views', 'proveedor-login.html'), 'utf8', (err, data) => {
+        if (err) {
+            return res.status(500).send('Error al cargar la página');
+        }
+        
+        // Reemplazar el placeholder con el Client ID real
+        const html = data.replace('{{ GOOGLE_CLIENT_ID }}', process.env.GOOGLE_CLIENT_ID || '');
+        res.send(html);
+    });
 });
 
 app.get('/proveedor/dashboard', (req, res) => {
@@ -448,7 +497,7 @@ app.get('/admin/dashboard', (req, res) => {
     res.sendFile(path.join(__dirname, 'views', 'admin-dashboard.html'));
 });
 
-app.get('/admin/inventario', requireAuth, requireAdmin, (req, res) => {
+app.get('/admin/inventario', (req, res) => {
     res.sendFile(path.join(__dirname, 'views', 'admin-inventario.html'));
 });
 
@@ -474,6 +523,304 @@ app.post('/api/empleado/logout', requireAuth, (req, res) => {
         } else {
             res.json({ message: 'Sesión cerrada exitosamente' });
         }
+        db.close();
+    });
+});
+
+// ===== GOOGLE OAUTH ENDPOINTS =====
+
+// Endpoint de prueba para validar configuración
+app.get('/api/test/google-config', (req, res) => {
+    res.json({
+        clientId: process.env.GOOGLE_CLIENT_ID ? 'Configured' : 'Missing',
+        clientIdPreview: process.env.GOOGLE_CLIENT_ID ? process.env.GOOGLE_CLIENT_ID.substring(0, 20) + '...' : 'N/A',
+        jwtSecret: process.env.JWT_SECRET ? 'Configured' : 'Missing',
+        nodeEnv: process.env.NODE_ENV,
+        polyfills: {
+            fetch: typeof global.fetch !== 'undefined',
+            Headers: typeof global.Headers !== 'undefined',
+            FormData: typeof global.FormData !== 'undefined',
+            ReadableStream: typeof global.ReadableStream !== 'undefined'
+        }
+    });
+});
+
+// Endpoint de prueba simple para POST
+app.post('/api/test/echo', (req, res) => {
+    console.log('=== TEST ECHO REQUEST ===');
+    console.log('Body:', req.body);
+    console.log('Headers:', req.headers);
+    res.json({
+        received: req.body,
+        timestamp: new Date().toISOString(),
+        success: true
+    });
+});
+
+// Endpoint para autenticación con Google
+app.post('/api/auth/google', async (req, res) => {
+    console.log('=== GOOGLE AUTH REQUEST ===');
+    console.log('Request body:', req.body);
+    console.log('Request headers:', req.headers);
+    
+    try {
+        const { credential } = req.body;
+        
+        console.log('Received credential:', credential ? credential.substring(0, 50) + '...' : 'null');
+        console.log('Credential length:', credential ? credential.length : 0);
+        console.log('Using CLIENT_ID:', process.env.GOOGLE_CLIENT_ID);
+        
+        if (!credential) {
+            console.log('ERROR: No credential provided');
+            console.log('Request body keys:', Object.keys(req.body || {}));
+            return res.status(400).json({ error: 'Token de Google requerido', received: req.body });
+        }
+        
+        console.log('Starting token verification...');
+        
+        // Verificar el token con Google
+        const ticket = await googleClient.verifyIdToken({
+            idToken: credential,
+            audience: process.env.GOOGLE_CLIENT_ID
+        });
+        
+        const payload = ticket.getPayload();
+        const { sub: googleId, email, name, picture } = payload;
+        
+        console.log('Token verified successfully for:', email);
+        console.log('Google ID:', googleId);
+        console.log('Name:', name);
+        
+        const db = new sqlite3.Database(dbPath);
+        
+        // Buscar si el proveedor ya existe
+        db.get('SELECT * FROM proveedores_oauth WHERE google_id = ? OR email = ?', 
+               [googleId, email], (err, proveedor) => {
+            if (err) {
+                res.status(500).json({ error: 'Error de servidor' });
+                db.close();
+                return;
+            }
+            
+            if (proveedor) {
+                // Usuario existente - actualizar datos si es necesario
+                db.run(`UPDATE proveedores_oauth 
+                       SET nombre = ?, avatar_url = ? 
+                       WHERE id = ?`,
+                       [name, picture, proveedor.id], (err) => {
+                    if (err) {
+                        res.status(500).json({ error: 'Error al actualizar usuario' });
+                        db.close();
+                        return;
+                    }
+                    
+                    // Generar JWT
+                    const token = jwt.sign(
+                        { 
+                            proveedorId: proveedor.id, 
+                            email: proveedor.email, 
+                            nombre: proveedor.nombre,
+                            tipo: 'proveedor' 
+                        },
+                        process.env.JWT_SECRET,
+                        { expiresIn: '7d' }
+                    );
+                    
+                    res.json({
+                        success: true,
+                        token,
+                        proveedor: {
+                            id: proveedor.id,
+                            email: proveedor.email,
+                            nombre: proveedor.nombre,
+                            avatar_url: picture
+                        }
+                    });
+                    db.close();
+                });
+            } else {
+                // Usuario nuevo - crear cuenta
+                db.run(`INSERT INTO proveedores_oauth (google_id, email, nombre, avatar_url) 
+                       VALUES (?, ?, ?, ?)`,
+                       [googleId, email, name, picture], function(err) {
+                    if (err) {
+                        res.status(500).json({ error: 'Error al crear usuario' });
+                        db.close();
+                        return;
+                    }
+                    
+                    const nuevoProveedorId = this.lastID;
+                    
+                    // Generar JWT
+                    const token = jwt.sign(
+                        { 
+                            proveedorId: nuevoProveedorId, 
+                            email, 
+                            nombre: name,
+                            tipo: 'proveedor' 
+                        },
+                        process.env.JWT_SECRET,
+                        { expiresIn: '7d' }
+                    );
+                    
+                    res.json({
+                        success: true,
+                        token,
+                        proveedor: {
+                            id: nuevoProveedorId,
+                            email,
+                            nombre: name,
+                            avatar_url: picture
+                        },
+                        isNewUser: true
+                    });
+                    db.close();
+                });
+            }
+        });
+        
+    } catch (error) {
+        console.error('Error en autenticación Google:', error);
+        console.error('Error details:', {
+            name: error.name,
+            message: error.message,
+            stack: error.stack
+        });
+        res.status(400).json({ 
+            error: 'Token de Google inválido',
+            details: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
+    }
+});
+
+
+// Middleware para verificar tokens JWT de proveedores
+function requireProveedorAuth(req, res, next) {
+    const authHeader = req.headers.authorization;
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(401).json({ error: 'Token de autorización requerido' });
+    }
+    
+    const token = authHeader.substring(7);
+    
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        if (decoded.tipo !== 'proveedor') {
+            return res.status(403).json({ error: 'Token inválido para proveedores' });
+        }
+        req.proveedor = decoded;
+        next();
+    } catch (error) {
+        res.status(401).json({ error: 'Token inválido' });
+    }
+}
+
+// Endpoint para verificar autenticación de proveedor
+app.get('/api/proveedor/verify', requireProveedorAuth, (req, res) => {
+    res.json({ 
+        valid: true, 
+        proveedor: {
+            id: req.proveedor.proveedorId,
+            email: req.proveedor.email,
+            nombre: req.proveedor.nombre
+        }
+    });
+});
+
+// Endpoint para obtener solicitudes de un proveedor autenticado con Google
+app.get('/api/proveedor/solicitudes', requireProveedorAuth, (req, res) => {
+    const db = new sqlite3.Database(dbPath);
+    const proveedorId = req.proveedor.proveedorId;
+    const email = req.proveedor.email;
+    
+    // Obtener solicitudes tanto por OAuth ID como por email (para solicitudes anteriores al registro)
+    db.all(`SELECT * FROM solicitudes 
+            WHERE proveedor_oauth_id = ? OR proveedor_email = ? 
+            ORDER BY fecha_solicitud DESC`, 
+           [proveedorId, email], (err, rows) => {
+        if (err) {
+            res.status(500).json({ error: err.message });
+            db.close();
+            return;
+        }
+        
+        // Actualizar las solicitudes que coincidan por email para vincularlas al OAuth ID
+        if (rows.length > 0) {
+            const solicitudesParaVincular = rows.filter(row => 
+                !row.proveedor_oauth_id && row.proveedor_email === email
+            );
+            
+            if (solicitudesParaVincular.length > 0) {
+                const updateStmt = db.prepare('UPDATE solicitudes SET proveedor_oauth_id = ? WHERE id = ?');
+                solicitudesParaVincular.forEach(solicitud => {
+                    updateStmt.run([proveedorId, solicitud.id]);
+                });
+                updateStmt.finalize();
+            }
+        }
+        
+        res.json({
+            solicitudes: rows,
+            total: rows.length,
+            proveedor: {
+                id: proveedorId,
+                email,
+                nombre: req.proveedor.nombre
+            }
+        });
+        db.close();
+    });
+});
+
+// Endpoint para crear solicitud autenticada con Google OAuth
+app.post('/api/proveedor/solicitudes', requireProveedorAuth, [
+    body('tipo_servicio')
+        .isIn(['repuestos', 'herramientas', 'pintura', 'grua', 'mecanico', 'otros'])
+        .withMessage('Tipo de servicio inválido'),
+    body('descripcion')
+        .trim()
+        .isLength({ min: 10, max: 1000 })
+        .withMessage('La descripción debe tener entre 10 y 1000 caracteres'),
+    body('urgencia')
+        .isIn(['baja', 'media', 'alta', 'critica'])
+        .withMessage('Nivel de urgencia inválido'),
+    handleValidationErrors
+], (req, res) => {
+    const { 
+        tipo_servicio, 
+        descripcion, 
+        urgencia,
+        fecha_preferida,
+        presupuesto_estimado,
+        proveedor_telefono,
+        empresa
+    } = req.body;
+    
+    const trackerCode = generateTrackerCode();
+    const db = new sqlite3.Database(dbPath);
+    const proveedorId = req.proveedor.proveedorId;
+    const proveedor_nombre = req.proveedor.nombre;
+    const proveedor_email = req.proveedor.email;
+    
+    const stmt = db.prepare(`INSERT INTO solicitudes 
+        (tracker_code, proveedor_nombre, proveedor_email, proveedor_telefono, proveedor_oauth_id, empresa, tipo_servicio, descripcion, urgencia, fecha_preferida, presupuesto_estimado) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+    
+    stmt.run([trackerCode, proveedor_nombre, proveedor_email, proveedor_telefono, proveedorId, empresa, tipo_servicio, descripcion, urgencia, fecha_preferida, presupuesto_estimado], function(err) {
+        stmt.finalize();
+        
+        if (err) {
+            res.status(500).json({ error: err.message });
+            db.close();
+            return;
+        }
+        
+        res.json({ 
+            id: this.lastID,
+            tracker: trackerCode,
+            message: 'Solicitud creada correctamente'
+        });
         db.close();
     });
 });
@@ -1691,11 +2038,12 @@ app.use('*', (req, res) => {
     res.status(404).json({ error: 'Ruta no encontrada' });
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, 'localhost', () => {
     console.log(`🚀 Servidor ejecutándose en http://localhost:${PORT}`);
     console.log(`📁 Base de datos: ${dbPath}`);
     console.log(`🌍 Entorno: ${NODE_ENV}`);
     console.log(`🔒 Seguridad: Helmet activado, Rate limiting activado`);
+    console.log(`📍 Host específico: localhost (no 127.0.0.1)`);
     
     if (NODE_ENV === 'production') {
         console.log('✅ Ejecutando en modo PRODUCCIÓN');

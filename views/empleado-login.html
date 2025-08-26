@@ -51,18 +51,17 @@
         </main>
 
         <footer>
-            <p>
-                <a href="/">Crear Nueva Solicitud</a> | 
-                <a href="/tracker">Rastrear Solicitud</a> | 
-                <a href="/proveedor">Portal Proveedor</a>
-            </p>
-            <div class="version-info">
-                <span id="app-version">v1.0.0</span> | 
-                <span>by msaucedo</span>
-            </div>
+            <!-- Footer generado automáticamente -->
         </footer>
     </div>
 
+    <script src="/js/utils.js"></script>
+    <script>
+        // Inicializar footer unificado
+        document.addEventListener('DOMContentLoaded', function() {
+            renderFooter({ type: 'simple' });
+        });
+    </script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const form = document.getElementById('empleadoLoginForm');

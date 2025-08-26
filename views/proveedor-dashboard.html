@@ -70,23 +70,25 @@
         </main>
 
         <footer>
-            <p>
-                <a href="/">Crear Nueva Solicitud</a> | 
-                <a href="/tracker">Rastrear Solicitud</a> | 
-                <a href="/proveedor">Portal Proveedor</a>
-            </p>
-            <div class="version-info">
-                <span id="app-version">v1.0.0</span> | 
-                <span>by msaucedo</span>
-            </div>
+            <!-- Footer generado automáticamente -->
         </footer>
     </div>
 
+    <script src="/js/utils.js"></script>
+    <script>
+        // Inicializar footer unificado
+        document.addEventListener('DOMContentLoaded', function() {
+            renderFooter({ type: 'simple' });
+        });
+    </script>
     <script>
         let solicitudes = [];
         let solicitudesFiltradas = [];
         
         document.addEventListener('DOMContentLoaded', function() {
+            // Verificar si hay datos de OAuth en URL
+            procesarAutenticacionOAuth();
+            
             verificarAutenticacion();
             
             const filtroEstado = document.getElementById('filtroEstado');
@@ -96,7 +98,77 @@
             filtroServicio.addEventListener('change', filtrarSolicitudes);
         });
         
-        function verificarAutenticacion() {
+        function procesarAutenticacionOAuth() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const token = urlParams.get('token');
+            const proveedorData = urlParams.get('proveedor');
+            const isNew = urlParams.get('new');
+            
+            if (token && proveedorData) {
+                try {
+                    // Guardar datos de sesión
+                    localStorage.setItem('proveedorToken', token);
+                    localStorage.setItem('proveedorData', proveedorData);
+                    
+                    // También en sessionStorage para compatibilidad
+                    sessionStorage.setItem('proveedorData', proveedorData);
+                    
+                    // Mostrar mensaje de bienvenida
+                    if (isNew) {
+                        showMessage('¡Cuenta creada exitosamente! Bienvenido.', 'success');
+                    } else {
+                        showMessage('Inicio de sesión exitoso.', 'success');
+                    }
+                    
+                    // Limpiar URL sin recargar la página
+                    window.history.replaceState({}, document.title, '/proveedor/dashboard');
+                    
+                } catch (error) {
+                    console.error('Error procesando autenticación:', error);
+                    showMessage('Error al procesar la autenticación', 'error');
+                }
+            }
+        }
+        
+        function showMessage(text, type) {
+            // Crear elemento de mensaje temporal si no existe
+            let messageDiv = document.getElementById('message');
+            if (!messageDiv) {
+                messageDiv = document.createElement('div');
+                messageDiv.id = 'message';
+                messageDiv.className = 'message';
+                document.querySelector('.container').appendChild(messageDiv);
+            }
+            
+            messageDiv.textContent = text;
+            messageDiv.className = `message ${type}`;
+            messageDiv.style.display = 'block';
+            
+            setTimeout(() => {
+                messageDiv.style.display = 'none';
+            }, 3000);
+        }
+        
+        async function verificarAutenticacion() {
+            // Verificar primero autenticación OAuth
+            const oauthToken = localStorage.getItem('proveedorToken');
+            const oauthData = localStorage.getItem('proveedorData');
+            
+            if (oauthToken && oauthData) {
+                try {
+                    const proveedorInfo = JSON.parse(oauthData);
+                    document.getElementById('welcomeMessage').textContent = `Bienvenido, ${proveedorInfo.nombre}`;
+                    
+                    // Cargar solicitudes usando el token OAuth
+                    await cargarSolicitudesOAuth(oauthToken);
+                    return;
+                } catch (error) {
+                    console.error('Error con autenticación OAuth:', error);
+                    // Continuar con autenticación básica
+                }
+            }
+            
+            // Autenticación básica (por email)
             const proveedorData = sessionStorage.getItem('proveedorData');
             
             if (!proveedorData) {
@@ -112,6 +184,37 @@
             
             mostrarEstadisticas();
             mostrarSolicitudes(solicitudes);
+        }
+        
+        async function cargarSolicitudesOAuth(token) {
+            try {
+                const response = await fetch('/api/proveedor/solicitudes', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    solicitudes = data.solicitudes || [];
+                    solicitudesFiltradas = solicitudes;
+                    
+                    mostrarEstadisticas();
+                    mostrarSolicitudes(solicitudes);
+                } else if (response.status === 401) {
+                    // Token expirado o inválido
+                    localStorage.removeItem('proveedorToken');
+                    localStorage.removeItem('proveedorData');
+                    window.location.href = '/proveedor';
+                } else {
+                    showMessage('Error al cargar las solicitudes', 'error');
+                }
+            } catch (error) {
+                console.error('Error cargando solicitudes OAuth:', error);
+                showMessage('Error de conexión al cargar solicitudes', 'error');
+            }
         }
         
         function mostrarEstadisticas() {
@@ -223,7 +326,10 @@
         }
         
         function cerrarSesion() {
+            // Limpiar todos los datos de sesión
             sessionStorage.removeItem('proveedorData');
+            localStorage.removeItem('proveedorToken');
+            localStorage.removeItem('proveedorData');
             window.location.href = '/proveedor';
         }
         

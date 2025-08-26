@@ -134,7 +134,9 @@ sqlite3 database/taller.db "UPDATE usuarios SET activo = 1"
 ```
 
 ## Notas, mejoras
-- el boton "inventario" manda a una pantalla con este error: "{"error":"Token no proporcionado"}"
+- al cerrar sesion si se muestra el modal custom pero despues de abre el modal OG tambien, solo deberia mostrarse el custom modal
+- arreglar las imagenes parpadeantes, es molesto
+- un solo footer para todas las paginas de la app
 
 
 ## 📄 Licencia

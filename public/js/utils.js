@@ -128,10 +128,26 @@ window.AppUtils = {
     // Manejo de errores API
     async manejarRespuestaAPI(response) {
         if (!response.ok) {
-            const error = await response.json().catch(() => ({ error: 'Error desconocido' }));
-            throw new Error(error.error || `Error HTTP: ${response.status}`);
+            try {
+                const error = await response.json();
+                // Si hay detalles de validación, crear un mensaje más específico
+                if (error.details && Array.isArray(error.details)) {
+                    const detalles = error.details.map(detail => `${detail.field}: ${detail.message}`).join('\n');
+                    throw new Error(`${error.error}\n\nDetalles:\n${detalles}`);
+                }
+                throw new Error(error.error || error.message || `Error HTTP: ${response.status}`);
+            } catch (jsonError) {
+                if (jsonError instanceof SyntaxError) {
+                    throw new Error(`Error del servidor: ${response.status} ${response.statusText}`);
+                }
+                throw jsonError;
+            }
         }
-        return response.json();
+        try {
+            return await response.json();
+        } catch (jsonError) {
+            throw new Error('Respuesta del servidor inválida');
+        }
     },
 
     // Mostrar mensajes (función base)
@@ -248,19 +264,35 @@ window.AuthService = {
     },
     
     async logout() {
-        if (AppUtils.confirmar('¿Estás seguro de que deseas cerrar sesión?')) {
-            const token = localStorage.getItem('empleadoToken');
-            
-            fetch('/api/empleado/logout', {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`
+        // Usar modal de confirmación profesional si está disponible
+        if (window.mostrarConfirmacion) {
+            mostrarConfirmacion(
+                '🚪 Cerrar Sesión',
+                '¿Está seguro de que desea cerrar sesión?',
+                () => {
+                    this.ejecutarLogout();
                 }
-            }).finally(() => {
-                this.clearSession();
-                window.location.href = '/empleado/login';
-            });
+            );
+        } else {
+            // Fallback para casos donde no hay modal custom
+            if (AppUtils.confirmar('¿Estás seguro de que deseas cerrar sesión?')) {
+                this.ejecutarLogout();
+            }
         }
+    },
+    
+    ejecutarLogout() {
+        const token = localStorage.getItem('empleadoToken');
+        
+        fetch('/api/empleado/logout', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        }).finally(() => {
+            this.clearSession();
+            window.location.href = '/empleado/login';
+        });
     }
 };
 
@@ -473,6 +505,144 @@ window.ExportUtils = {
         const fecha = new Date().toISOString().split('T')[0];
         XLSX.writeFile(wb, `${nombreArchivo}-${fecha}.xlsx`);
     }
+};
+
+// Modal de confirmación profesional global
+window.mostrarConfirmacion = function(titulo, mensaje, onConfirmar, onCancelar = null) {
+    return new Promise((resolve) => {
+        // Verificar si el modal existe, si no, crearlo
+        let modal = document.getElementById('modal-confirmacion');
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'modal-confirmacion';
+            modal.className = 'modal hidden';
+            modal.innerHTML = `
+                <div class="modal-content">
+                    <h3 id="confirmacion-titulo">⚠️ Confirmar Acción</h3>
+                    <p id="confirmacion-mensaje">¿Está seguro de realizar esta acción?</p>
+                    <div class="form-actions">
+                        <button id="btn-confirmar-si" class="btn btn-primary">Sí</button>
+                        <button id="btn-confirmar-no" class="btn btn-secondary">No</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+        
+        // Configurar contenido
+        document.getElementById('confirmacion-titulo').textContent = titulo;
+        document.getElementById('confirmacion-mensaje').textContent = mensaje;
+        
+        // Configurar eventos
+        const btnSi = document.getElementById('btn-confirmar-si');
+        const btnNo = document.getElementById('btn-confirmar-no');
+        
+        const cerrarModal = () => {
+            modal.classList.add('hidden');
+            document.body.style.overflow = '';
+        };
+        
+        btnSi.onclick = () => {
+            cerrarModal();
+            if (onConfirmar) onConfirmar();
+            resolve(true);
+        };
+        
+        btnNo.onclick = () => {
+            cerrarModal();
+            if (onCancelar) onCancelar();
+            resolve(false);
+        };
+        
+        // Mostrar modal
+        modal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+        
+        // Cerrar con Escape
+        const handleEscape = (e) => {
+            if (e.key === 'Escape') {
+                cerrarModal();
+                if (onCancelar) onCancelar();
+                resolve(false);
+                document.removeEventListener('keydown', handleEscape);
+            }
+        };
+        document.addEventListener('keydown', handleEscape);
+        
+        // Cerrar al hacer clic fuera
+        modal.onclick = (e) => {
+            if (e.target === modal) {
+                cerrarModal();
+                if (onCancelar) onCancelar();
+                resolve(false);
+            }
+        };
+    });
+};
+
+// Footer unificado para toda la aplicación
+window.renderFooter = function(options = {}) {
+    const {
+        type = 'full', // 'full' | 'simple' | 'dashboard'
+        showNavigation = true,
+        showVersion = true,
+        customContent = null,
+        containerSelector = 'footer'
+    } = options;
+    
+    let footerContent = '';
+    
+    // Navegación según el tipo
+    if (showNavigation) {
+        if (type === 'full') {
+            footerContent += `
+                <p>
+                    <a href="/proveedor">Portal Proveedor</a> | 
+                    <a href="/tracker">Rastrear Solicitud</a> | 
+                    <a href="/empleado/login">Acceso Empleados</a> | 
+                    <a href="/dashboard">Dashboard (Propietario)</a>
+                </p>
+            `;
+        } else if (type === 'simple') {
+            footerContent += `
+                <p>
+                    <a href="/">Crear Nueva Solicitud</a> | 
+                    <a href="/tracker">Rastrear Solicitud</a> | 
+                    <a href="/proveedor">Portal Proveedor</a>
+                </p>
+            `;
+        } else if (type === 'dashboard') {
+            footerContent += `<p><a href="/admin/dashboard">← Volver al Dashboard</a></p>`;
+        }
+    }
+    
+    // Contenido personalizado
+    if (customContent) {
+        footerContent += customContent;
+    }
+    
+    // Información de versión
+    if (showVersion) {
+        footerContent += `
+            <div class="version-info">
+                <span id="app-version">v1.0.0</span> | 
+                <span>by msaucedo</span>
+            </div>
+        `;
+    }
+    
+    // Renderizar en el contenedor
+    const footerElement = document.querySelector(containerSelector);
+    if (footerElement) {
+        footerElement.innerHTML = footerContent;
+        
+        // Cargar versión automáticamente si está habilitada
+        if (showVersion) {
+            AppUtils.cargarVersion();
+        }
+    }
+    
+    return footerContent;
 };
 
 // Función global para logout (mantener compatibilidad)

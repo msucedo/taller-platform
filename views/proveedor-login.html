@@ -5,6 +5,50 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Portal Proveedor - Llantera</title>
     <link rel="stylesheet" href="/css/styles.css">
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <style>
+        .divider {
+            margin: 20px 0;
+            text-align: center;
+            position: relative;
+        }
+        
+        .divider::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: var(--border-color, #ddd);
+        }
+        
+        .divider span {
+            background: var(--background-color, white);
+            padding: 0 15px;
+            color: var(--text-secondary, #666);
+            font-size: 14px;
+        }
+        
+        .google-signin-section {
+            margin: 20px 0;
+            width: 100%;
+        }
+        
+        .google-help-text {
+            margin-top: 10px;
+            font-size: 12px;
+            color: var(--text-secondary, #666);
+            line-height: 1.4;
+            text-align: center;
+        }
+        
+        .g_id_signin {
+            margin: 0 auto !important;
+            width: 100% !important;
+            max-width: 100% !important;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
@@ -30,6 +74,36 @@
                         <button type="submit" class="btn btn-success btn-block">Ingresar al Portal</button>
                     </form>
                     
+                    <div class="divider">
+                        <span>O</span>
+                    </div>
+                    
+                    <!-- Botón de Google Sign-In -->
+                    <div class="google-signin-section">
+                        <div id="g_id_onload"
+                             data-client_id="{{ GOOGLE_CLIENT_ID }}"
+                             data-context="signin"
+                             data-ux_mode="popup"
+                             data-callback="handleGoogleSignIn"
+                             data-auto_prompt="false"
+                             data-close_on_tap_outside="false"
+                             data-use_fedcm_for_prompt="false">
+                        </div>
+                        
+                        <div class="g_id_signin"
+                             data-type="standard"
+                             data-shape="rectangular"
+                             data-theme="outline"
+                             data-text="signin_with"
+                             data-size="large"
+                             data-logo_alignment="left">
+                        </div>
+                        
+                        <p class="google-help-text">
+                            Inicie sesión con Google para acceso seguro y rápido a sus solicitudes
+                        </p>
+                    </div>
+                    
                     <div class="help-section">
                         <h4>¿Necesita ayuda?</h4>
                         <ul>
@@ -45,20 +119,120 @@
         </main>
 
         <footer>
-            <p>
-                <a href="/">Crear Nueva Solicitud</a> | 
-                <a href="/tracker">Rastrear Solicitud</a> | 
-                <a href="/dashboard">Dashboard (Propietario)</a>
-            </p>
-            <div class="version-info">
-                <span id="app-version">v1.0.0</span> | 
-                <span>by msaucedo</span>
-            </div>
+            <!-- Footer generado automáticamente -->
         </footer>
     </div>
 
+    <script src="/js/utils.js"></script>
     <script>
+        // Inicializar footer unificado
         document.addEventListener('DOMContentLoaded', function() {
+            renderFooter({ type: 'simple' });
+        });
+    </script>
+    <script>
+        // Función global para mostrar mensajes
+        function showMessage(text, type) {
+            const messageDiv = document.getElementById('message');
+            if (messageDiv) {
+                messageDiv.textContent = text;
+                messageDiv.className = `message ${type}`;
+                messageDiv.classList.remove('hidden');
+                
+                if (type === 'success' || type === 'info') {
+                    setTimeout(() => {
+                        messageDiv.classList.add('hidden');
+                    }, 3000);
+                }
+            }
+        }
+        
+        // Inicializar Google Sign-In
+        window.handleGoogleSignIn = async function(response) {
+            try {
+                console.log('=== GOOGLE SIGN-IN CALLBACK ===');
+                console.log('Full response object:', response);
+                console.log('Response type:', typeof response);
+                console.log('Response keys:', Object.keys(response || {}));
+                
+                showMessage('Autenticando con Google...', 'info');
+                
+                if (!response || !response.credential) {
+                    console.error('Missing credential in response:', response);
+                    throw new Error('No se recibió credential de Google');
+                }
+                
+                console.log('Credential found, length:', response.credential.length);
+                console.log('Credential preview:', response.credential.substring(0, 50) + '...');
+                
+                const payload = {
+                    credential: response.credential
+                };
+                console.log('Sending payload:', payload);
+                
+                const jsonString = JSON.stringify(payload);
+                console.log('JSON string:', jsonString);
+                console.log('JSON string length:', jsonString.length);
+                
+                const result = await fetch('/api/auth/google', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: jsonString
+                });
+                
+                console.log('HTTP status:', result.status);
+                console.log('Response headers:', [...result.headers.entries()]);
+                
+                const data = await result.json();
+                console.log('Server response:', data);
+                
+                if (data.success) {
+                    showMessage(data.isNewUser ? 
+                        'Cuenta creada exitosamente. Bienvenido!' : 
+                        'Inicio de sesión exitoso', 'success');
+                    
+                    // Guardar datos de sesión
+                    localStorage.setItem('proveedorToken', data.token);
+                    localStorage.setItem('proveedorData', JSON.stringify(data.proveedor));
+                    
+                    // Redireccionar al dashboard
+                    setTimeout(() => {
+                        window.location.href = '/proveedor/dashboard';
+                    }, 1500);
+                } else {
+                    showMessage(data.error || 'Error al autenticar con Google', 'error');
+                }
+                
+            } catch (error) {
+                console.error('Error completo:', error);
+                showMessage('Error de conexión al autenticar con Google', 'error');
+            }
+        };
+        
+        // Manejo de errores de Google Sign-In
+        window.addEventListener('load', function() {
+            if (typeof google !== 'undefined' && google.accounts) {
+                google.accounts.id.initialize({
+                    client_id: '{{ GOOGLE_CLIENT_ID }}',
+                    callback: handleGoogleSignIn,
+                    error_callback: function(error) {
+                        console.error('Google Sign-In error:', error);
+                        showMessage('Error al inicializar Google Sign-In. Intente refrescar la página.', 'error');
+                    }
+                });
+            }
+        });
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            // Debug info
+            console.log('Origen actual:', window.location.origin);
+            
+            // Inicializar footer unificado
+            renderFooter({ type: 'simple' });
+            
+            // Manejo del formulario de login
             const form = document.getElementById('loginForm');
             const messageDiv = document.getElementById('message');
             
@@ -104,18 +278,6 @@
                     showMessage('Error de conexión. Intente nuevamente.', 'error');
                 }
             });
-            
-            function showMessage(text, type) {
-                messageDiv.textContent = text;
-                messageDiv.className = `message ${type}`;
-                messageDiv.classList.remove('hidden');
-                
-                if (type === 'success' || type === 'info') {
-                    setTimeout(() => {
-                        messageDiv.classList.add('hidden');
-                    }, 3000);
-                }
-            }
         });
     </script>
 </body>
