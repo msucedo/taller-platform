@@ -1,6 +1,6 @@
 {
   "name": "taller-platform",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Plataforma web para llantera - solicitudes de proveedores",
   "main": "server.js",
   "scripts": {

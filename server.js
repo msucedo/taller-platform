@@ -2038,12 +2038,14 @@ app.use('*', (req, res) => {
     res.status(404).json({ error: 'Ruta no encontrada' });
 });
 
-app.listen(PORT, 'localhost', () => {
-    console.log(`🚀 Servidor ejecutándose en http://localhost:${PORT}`);
+const HOST = NODE_ENV === 'production' ? '0.0.0.0' : 'localhost';
+
+app.listen(PORT, HOST, () => {
+    console.log(`🚀 Servidor ejecutándose en http://${HOST}:${PORT}`);
     console.log(`📁 Base de datos: ${dbPath}`);
     console.log(`🌍 Entorno: ${NODE_ENV}`);
     console.log(`🔒 Seguridad: Helmet activado, Rate limiting activado`);
-    console.log(`📍 Host específico: localhost (no 127.0.0.1)`);
+    console.log(`📍 Host: ${HOST}`);
     
     if (NODE_ENV === 'production') {
         console.log('✅ Ejecutando en modo PRODUCCIÓN');

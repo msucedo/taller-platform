@@ -3,7 +3,7 @@ const path = require('path');
 const bcrypt = require('bcrypt');
 require('dotenv').config();
 
-const dbPath = path.join(__dirname, 'taller.db');
+const dbPath = process.env.DB_PATH || path.join(__dirname, 'taller.db');
 
 function generateTrackerCode() {
     const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
