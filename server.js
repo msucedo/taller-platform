@@ -153,7 +153,14 @@ const upload = multer({
     }
 });
 
+// Initialize database first, then start server
+console.log('Initializing database...');
 initDatabase();
+
+// Add a small delay to ensure DB is ready
+setTimeout(() => {
+    console.log('Database initialization completed');
+}, 1000);
 
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'views', 'index.html'));
@@ -535,17 +542,32 @@ app.post('/api/empleado/logout', requireAuth, (req, res) => {
 
 // Endpoint de prueba para validar configuración
 app.get('/api/test/google-config', (req, res) => {
-    res.json({
-        clientId: process.env.GOOGLE_CLIENT_ID ? 'Configured' : 'Missing',
-        clientIdPreview: process.env.GOOGLE_CLIENT_ID ? process.env.GOOGLE_CLIENT_ID.substring(0, 20) + '...' : 'N/A',
-        jwtSecret: process.env.JWT_SECRET ? 'Configured' : 'Missing',
-        nodeEnv: process.env.NODE_ENV,
-        polyfills: {
-            fetch: typeof global.fetch !== 'undefined',
-            Headers: typeof global.Headers !== 'undefined',
-            FormData: typeof global.FormData !== 'undefined',
-            ReadableStream: typeof global.ReadableStream !== 'undefined'
+    const db = new sqlite3.Database(dbPath);
+    
+    // Verificar si la tabla proveedores_oauth existe
+    db.get("SELECT name FROM sqlite_master WHERE type='table' AND name='proveedores_oauth'", (err, table) => {
+        if (err) {
+            console.error('Error checking table:', err);
         }
+        
+        db.close();
+        
+        res.json({
+            clientId: process.env.GOOGLE_CLIENT_ID ? 'Configured' : 'Missing',
+            clientIdPreview: process.env.GOOGLE_CLIENT_ID ? process.env.GOOGLE_CLIENT_ID.substring(0, 20) + '...' : 'N/A',
+            jwtSecret: process.env.JWT_SECRET ? 'Configured' : 'Missing',
+            nodeEnv: process.env.NODE_ENV,
+            database: {
+                path: dbPath,
+                proveedoresOauthTable: table ? 'Exists' : 'Missing'
+            },
+            polyfills: {
+                fetch: typeof global.fetch !== 'undefined',
+                Headers: typeof global.Headers !== 'undefined',
+                FormData: typeof global.FormData !== 'undefined',
+                ReadableStream: typeof global.ReadableStream !== 'undefined'
+            }
+        });
     });
 });
 
@@ -561,11 +583,52 @@ app.post('/api/test/echo', (req, res) => {
     });
 });
 
+// Endpoint de diagnóstico para la base de datos
+app.get('/api/test/database', (req, res) => {
+    console.log('=== DATABASE TEST ===');
+    const db = new sqlite3.Database(dbPath);
+    
+    // Test basic connectivity
+    db.get("SELECT datetime('now') as current_time", (err, row) => {
+        if (err) {
+            console.error('Database connection error:', err);
+            db.close();
+            return res.status(500).json({
+                error: 'Database connection failed',
+                details: err.message
+            });
+        }
+        
+        // Check if proveedores_oauth table exists and is accessible
+        db.get("SELECT COUNT(*) as count FROM proveedores_oauth", (err, countResult) => {
+            const tableAccessible = !err;
+            
+            db.close();
+            
+            res.json({
+                success: true,
+                database_time: row.current_time,
+                proveedores_oauth_accessible: tableAccessible,
+                count: tableAccessible ? countResult.count : null,
+                error: err ? err.message : null
+            });
+        });
+    });
+});
+
 // Endpoint para autenticación con Google
 app.post('/api/auth/google', async (req, res) => {
     console.log('=== GOOGLE AUTH REQUEST ===');
     console.log('Request body:', req.body);
     console.log('Request headers:', req.headers);
+    
+    // Set response timeout
+    const timeoutId = setTimeout(() => {
+        console.error('Request timeout - sending 408 response');
+        if (!res.headersSent) {
+            res.status(408).json({ error: 'Request timeout' });
+        }
+    }, 25000); // 25 seconds timeout
     
     try {
         const { credential } = req.body;
@@ -575,6 +638,7 @@ app.post('/api/auth/google', async (req, res) => {
         console.log('Using CLIENT_ID:', process.env.GOOGLE_CLIENT_ID);
         
         if (!credential) {
+            clearTimeout(timeoutId);
             console.log('ERROR: No credential provided');
             console.log('Request body keys:', Object.keys(req.body || {}));
             return res.status(400).json({ error: 'Token de Google requerido', received: req.body });
@@ -601,7 +665,11 @@ app.post('/api/auth/google', async (req, res) => {
         db.get('SELECT * FROM proveedores_oauth WHERE google_id = ? OR email = ?', 
                [googleId, email], (err, proveedor) => {
             if (err) {
-                res.status(500).json({ error: 'Error de servidor' });
+                clearTimeout(timeoutId);
+                console.error('Database error:', err);
+                if (!res.headersSent) {
+                    res.status(500).json({ error: 'Error de servidor' });
+                }
                 db.close();
                 return;
             }
@@ -613,34 +681,50 @@ app.post('/api/auth/google', async (req, res) => {
                        WHERE id = ?`,
                        [name, picture, proveedor.id], (err) => {
                     if (err) {
-                        res.status(500).json({ error: 'Error al actualizar usuario' });
+                        clearTimeout(timeoutId);
+                        console.error('Update error:', err);
+                        if (!res.headersSent) {
+                            res.status(500).json({ error: 'Error al actualizar usuario' });
+                        }
                         db.close();
                         return;
                     }
                     
                     // Generar JWT
-                    const token = jwt.sign(
-                        { 
-                            proveedorId: proveedor.id, 
-                            email: proveedor.email, 
-                            nombre: proveedor.nombre,
-                            tipo: 'proveedor' 
-                        },
-                        process.env.JWT_SECRET,
-                        { expiresIn: '7d' }
-                    );
-                    
-                    res.json({
-                        success: true,
-                        token,
-                        proveedor: {
-                            id: proveedor.id,
-                            email: proveedor.email,
-                            nombre: proveedor.nombre,
-                            avatar_url: picture
+                    try {
+                        const token = jwt.sign(
+                            { 
+                                proveedorId: proveedor.id, 
+                                email: proveedor.email, 
+                                nombre: proveedor.nombre,
+                                tipo: 'proveedor' 
+                            },
+                            process.env.JWT_SECRET,
+                            { expiresIn: '7d' }
+                        );
+                        
+                        clearTimeout(timeoutId);
+                        if (!res.headersSent) {
+                            res.json({
+                                success: true,
+                                token,
+                                proveedor: {
+                                    id: proveedor.id,
+                                    email: proveedor.email,
+                                    nombre: proveedor.nombre,
+                                    avatar_url: picture
+                                }
+                            });
                         }
-                    });
-                    db.close();
+                        db.close();
+                    } catch (jwtError) {
+                        clearTimeout(timeoutId);
+                        console.error('JWT error:', jwtError);
+                        if (!res.headersSent) {
+                            res.status(500).json({ error: 'Error al generar token' });
+                        }
+                        db.close();
+                    }
                 });
             } else {
                 // Usuario nuevo - crear cuenta
@@ -648,7 +732,11 @@ app.post('/api/auth/google', async (req, res) => {
                        VALUES (?, ?, ?, ?)`,
                        [googleId, email, name, picture], function(err) {
                     if (err) {
-                        res.status(500).json({ error: 'Error al crear usuario' });
+                        clearTimeout(timeoutId);
+                        console.error('Insert error:', err);
+                        if (!res.headersSent) {
+                            res.status(500).json({ error: 'Error al crear usuario' });
+                        }
                         db.close();
                         return;
                     }
@@ -656,44 +744,59 @@ app.post('/api/auth/google', async (req, res) => {
                     const nuevoProveedorId = this.lastID;
                     
                     // Generar JWT
-                    const token = jwt.sign(
-                        { 
-                            proveedorId: nuevoProveedorId, 
-                            email, 
-                            nombre: name,
-                            tipo: 'proveedor' 
-                        },
-                        process.env.JWT_SECRET,
-                        { expiresIn: '7d' }
-                    );
-                    
-                    res.json({
-                        success: true,
-                        token,
-                        proveedor: {
-                            id: nuevoProveedorId,
-                            email,
-                            nombre: name,
-                            avatar_url: picture
-                        },
-                        isNewUser: true
-                    });
-                    db.close();
+                    try {
+                        const token = jwt.sign(
+                            { 
+                                proveedorId: nuevoProveedorId, 
+                                email, 
+                                nombre: name,
+                                tipo: 'proveedor' 
+                            },
+                            process.env.JWT_SECRET,
+                            { expiresIn: '7d' }
+                        );
+                        
+                        clearTimeout(timeoutId);
+                        if (!res.headersSent) {
+                            res.json({
+                                success: true,
+                                token,
+                                proveedor: {
+                                    id: nuevoProveedorId,
+                                    email,
+                                    nombre: name,
+                                    avatar_url: picture
+                                },
+                                isNewUser: true
+                            });
+                        }
+                        db.close();
+                    } catch (jwtError) {
+                        clearTimeout(timeoutId);
+                        console.error('JWT error for new user:', jwtError);
+                        if (!res.headersSent) {
+                            res.status(500).json({ error: 'Error al generar token' });
+                        }
+                        db.close();
+                    }
                 });
             }
         });
         
     } catch (error) {
+        clearTimeout(timeoutId);
         console.error('Error en autenticación Google:', error);
         console.error('Error details:', {
             name: error.name,
             message: error.message,
             stack: error.stack
         });
-        res.status(400).json({ 
-            error: 'Token de Google inválido',
-            details: process.env.NODE_ENV === 'development' ? error.message : undefined
-        });
+        if (!res.headersSent) {
+            res.status(400).json({ 
+                error: 'Token de Google inválido',
+                details: process.env.NODE_ENV === 'development' ? error.message : undefined
+            });
+        }
     }
 });
 
