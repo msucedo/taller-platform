@@ -626,7 +626,7 @@ window.renderFooter = function(options = {}) {
         footerContent += `
             <div class="version-info">
                 <span id="app-version">v1.0.0</span> | 
-                <span>by msaucedo</span>
+                <span>msucedo</span>
             </div>
         `;
     }

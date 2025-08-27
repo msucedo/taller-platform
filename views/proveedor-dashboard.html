@@ -18,7 +18,7 @@
                 <div class="dashboard-header">
                     <h2>📋 Mis Solicitudes</h2>
                     <div class="dashboard-actions">
-                        <a href="/" class="btn btn-primary">+ Nueva Solicitud</a>
+                        <button onclick="abrirModalSolicitud()" class="btn btn-primary">+ Nueva Solicitud</button>
                         <button onclick="cerrarSesion()" class="btn btn-secondary">Cerrar Sesión</button>
                     </div>
                 </div>
@@ -75,10 +75,14 @@
     </div>
 
     <script src="/js/utils.js"></script>
+    <script src="/js/solicitud-modal.js"></script>
     <script>
         // Inicializar footer unificado
         document.addEventListener('DOMContentLoaded', function() {
             renderFooter({ type: 'simple' });
+            
+            // Inicializar modal de solicitud
+            initSolicitudModal();
         });
     </script>
     <script>
@@ -237,7 +241,7 @@
                     <div class="no-data">
                         <h3>No hay solicitudes</h3>
                         <p>Aún no has enviado solicitudes a la llantera.</p>
-                        <a href="/" class="btn btn-primary">Crear Primera Solicitud</a>
+                        <button onclick="abrirModalSolicitud()" class="btn btn-primary">Crear Primera Solicitud</button>
                     </div>
                 `;
                 return;

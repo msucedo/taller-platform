@@ -35,7 +35,8 @@ const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 const app = express();
 
 // Configure trust proxy for Railways deployment
-app.set('trust proxy', true);
+// More secure configuration than 'true'
+app.set('trust proxy', process.env.NODE_ENV === 'production' ? 1 : false);
 
 const PORT = process.env.PORT || 3000;
 const NODE_ENV = process.env.NODE_ENV || 'development';
