@@ -62,3 +62,7 @@ Thumbs.db
 *.bak
 *.swp
 *.swo
+
+# dummy data files for development
+poblar-inventario.js
+reset-inventario.js

@@ -135,7 +135,7 @@ sqlite3 database/taller.db "UPDATE usuarios SET activo = 1"
 
 ## Notas, mejoras
 - arreglar las imagenes parpadeantes, es molesto
-    ## nueva implementacion cotizaciones
+- en el inventario, despues de actualizar la tabla porque se edito un item por ejemplo, se debe limpiar el buscador
     
 
 

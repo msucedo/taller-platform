@@ -1556,7 +1556,8 @@ app.post('/api/inventario/productos', [
 ], requireAuth, requireAdmin, (req, res) => {
     const {
         marca, modelo, medida, descripcion, precio_compra, precio_venta,
-        stock_actual, stock_minimo, proveedor, imagen_url, caracteristicas
+        stock_actual, stock_minimo, proveedor, imagen_url, caracteristicas,
+        ubicacion_almacen, codigo_barras
     } = req.body;
     
     if (!marca || !modelo || !medida || !precio_venta) {
@@ -1567,13 +1568,13 @@ app.post('/api/inventario/productos', [
     
     const stmt = db.prepare(`INSERT INTO productos_llantas 
         (marca, modelo, medida, descripcion, precio_compra, precio_venta, 
-         stock_actual, stock_minimo, proveedor, imagen_url, caracteristicas)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+         stock_actual, stock_minimo, proveedor, imagen_url, caracteristicas, ubicacion_almacen, codigo_barras)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
     
     stmt.run([
         marca, modelo, medida, descripcion, precio_compra || null, precio_venta,
         stock_actual || 0, stock_minimo || 5, proveedor || null, imagen_url || null,
-        caracteristicas || null
+        caracteristicas || null, ubicacion_almacen || null, codigo_barras || null
     ], function(err) {
         if (err) {
             res.status(500).json({ error: err.message });
@@ -1594,7 +1595,7 @@ app.post('/api/inventario/productos', [
                     id: this.lastID,
                     marca, modelo, medida, descripcion, precio_compra, precio_venta,
                     stock_actual: stock_actual || 0, stock_minimo: stock_minimo || 5,
-                    proveedor, imagen_url, caracteristicas, activo: 1
+                    proveedor, imagen_url, caracteristicas, ubicacion_almacen, codigo_barras, activo: 1
                 }
             });
         }
@@ -1633,7 +1634,8 @@ app.put('/api/inventario/productos/:id', [
     const { id } = req.params;
     const {
         marca, modelo, medida, descripcion, precio_compra, precio_venta,
-        stock_actual, stock_minimo, proveedor, imagen_url, caracteristicas
+        stock_actual, stock_minimo, proveedor, imagen_url, caracteristicas,
+        ubicacion_almacen, codigo_barras
     } = req.body;
     
     if (!marca || !modelo || !medida || !precio_venta) {
@@ -1660,13 +1662,13 @@ app.put('/api/inventario/productos/:id', [
         const stmt = db.prepare(`UPDATE productos_llantas SET 
             marca = ?, modelo = ?, medida = ?, descripcion = ?, precio_compra = ?, 
             precio_venta = ?, stock_actual = ?, stock_minimo = ?, proveedor = ?, 
-            imagen_url = ?, caracteristicas = ?, fecha_actualizacion = CURRENT_TIMESTAMP
+            imagen_url = ?, caracteristicas = ?, ubicacion_almacen = ?, codigo_barras = ?, fecha_actualizacion = CURRENT_TIMESTAMP
             WHERE id = ?`);
         
         stmt.run([
             marca, modelo, medida, descripcion, precio_compra || null, precio_venta,
             nuevoStock, stock_minimo || 5, proveedor || null, imagen_url || null,
-            caracteristicas || null, id
+            caracteristicas || null, ubicacion_almacen || null, codigo_barras || null, id
         ], function(err) {
             if (err) {
                 res.status(500).json({ error: err.message });

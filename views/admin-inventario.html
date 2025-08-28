@@ -20,6 +20,9 @@
         <nav class="admin-nav">
             <a href="/admin/dashboard" class="nav-link">📊 Dashboard Principal</a>
             <a href="/admin/inventario" class="nav-link active">📦 Inventario</a>
+            <a href="#" onclick="mostrarMovimientos()" class="nav-link">📊 Movimientos</a>
+            <a href="#" onclick="mostrarInventarioFisico()" class="nav-link">📋 Inventario Físico</a>
+            <a href="#" onclick="mostrarReservas()" class="nav-link">🔒 Reservas</a>
             <a href="/dashboard" class="nav-link">📋 Solicitudes</a>
         </nav>
 
@@ -72,6 +75,14 @@
                     </button>
                 </div>
                 <div class="controls-right">
+                    <div class="view-toggle">
+                        <button id="btn-vista-tarjetas" onclick="cambiarVista('cards')" class="btn btn-outline-primary btn-sm active">
+                            🔲 Tarjetas
+                        </button>
+                        <button id="btn-vista-tabla" onclick="cambiarVista('table')" class="btn btn-outline-primary btn-sm">
+                            📋 Tabla
+                        </button>
+                    </div>
                     <div class="search-container">
                         <input type="text" id="buscar-producto" placeholder="Buscar por marca, modelo, medida..." class="search-input">
                         <button onclick="limpiarBusqueda()" class="btn btn-secondary btn-sm">Limpiar</button>
@@ -85,25 +96,29 @@
                 </div>
             </div>
 
-            <!-- Tabla de productos -->
-            <div class="inventory-table-container">
+            <!-- Vista de productos -->
+            <div class="inventory-container">
                 <div class="loading" id="loading-productos">
                     <div class="spinner"></div>
                     <p>Cargando inventario...</p>
                 </div>
                 
-                <div id="productos-container" style="display: none;">
-                    <table class="inventory-table">
+                <!-- Vista de tarjetas -->
+                <div id="vista-tarjetas" class="products-grid" style="display: none;">
+                    <!-- Las tarjetas se cargarán aquí dinámicamente -->
+                </div>
+
+                <!-- Vista de tabla compacta -->
+                <div id="vista-tabla" class="inventory-table-container" style="display: none;">
+                    <table class="inventory-table compact">
                         <thead>
                             <tr>
-                                <th class="sortable" onclick="ordenarPor('imagen')">Imagen</th>
-                                <th class="sortable" onclick="ordenarPor('marca')">Marca</th>
-                                <th class="sortable" onclick="ordenarPor('modelo')">Modelo</th>
-                                <th class="sortable" onclick="ordenarPor('medida')">Medida</th>
+                                <th class="sortable" onclick="ordenarPor('producto')">Producto</th>
+                                <th class="sortable" onclick="ordenarPor('ubicacion')">Ubicación</th>
                                 <th class="sortable" onclick="ordenarPor('stock')">Stock</th>
                                 <th class="sortable" onclick="ordenarPor('precio')">Precio</th>
                                 <th class="sortable" onclick="ordenarPor('estado')">Estado</th>
-                                <th>Acciones</th>
+                                <th class="actions-column">Acciones</th>
                             </tr>
                         </thead>
                         <tbody id="tabla-productos">
@@ -170,13 +185,13 @@
                     <div class="form-group">
                         <label for="producto-precio-compra">Precio Compra</label>
                         <input type="number" id="producto-precio-compra" name="precio_compra" 
-                               min="0" step="100" placeholder="150000">
+                               min="0" step="0.01" placeholder="150000">
                     </div>
 
                     <div class="form-group">
                         <label for="producto-precio-venta">Precio Venta*</label>
                         <input type="number" id="producto-precio-venta" name="precio_venta" 
-                               required min="0" step="100" placeholder="250000">
+                               required min="0" step="0.01" placeholder="250000">
                     </div>
 
                     <div class="form-group">
@@ -196,6 +211,42 @@
                         <input type="text" id="producto-proveedor" name="proveedor" 
                                placeholder="Nombre del proveedor">
                     </div>
+
+                    <div class="form-group">
+                        <label for="producto-codigo-barras">Código de Barras</label>
+                        <div class="barcode-container">
+                            <input type="text" id="producto-codigo-barras" name="codigo_barras" 
+                                   placeholder="Código de barras (se genera automático si está vacío)">
+                            <button type="button" onclick="generarCodigoBarras()" class="btn btn-secondary btn-sm">
+                                🔢 Generar
+                            </button>
+                        </div>
+                        <small>Si está vacío, se generará automáticamente basado en marca, modelo y medida</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="producto-ubicacion">Ubicación en Almacén</label>
+                        <select id="producto-ubicacion" name="ubicacion_almacen">
+                            <option value="">Seleccionar ubicación</option>
+                            <option value="A1">Estante A1 - Llantas 13-15"</option>
+                            <option value="A2">Estante A2 - Llantas 16-17"</option>
+                            <option value="A3">Estante A3 - Llantas 18+"</option>
+                            <option value="B1">Área B1 - Llantas Deportivas</option>
+                            <option value="B2">Área B2 - Llantas Camioneta</option>
+                            <option value="C1">Depósito C1 - Stock Reserva</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="producto-lote">Número de Lote</label>
+                        <input type="text" id="producto-lote" name="numero_lote" 
+                               placeholder="Ej: L2024001">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="producto-fecha-ingreso">Fecha de Ingreso</label>
+                        <input type="date" id="producto-fecha-ingreso" name="fecha_ingreso">
+                    </div>
                 </div>
 
                 <div class="form-group">
@@ -209,7 +260,7 @@
                     <div class="imagen-upload-container">
                         <input type="file" id="producto-imagen-file" accept="image/*" style="display: none;">
                         <input type="url" id="producto-imagen" name="imagen_url" 
-                               placeholder="https://tinyurl.com/bdhn9ubh" value="https://tinyurl.com/bdhn9ubh">
+                               placeholder="https://llanteramovil.com/wp-content/uploads/elementor/thumbs/llanta-5-pr0al2r4eqji54wsuj231nsld0ryo0qbwlru1zf280.png" value="https://llanteramovil.com/wp-content/uploads/elementor/thumbs/llanta-5-pr0al2r4eqji54wsuj231nsld0ryo0qbwlru1zf280.png">
                         <div class="upload-buttons">
                             <button type="button" onclick="abrirSeleccionArchivo()" class="btn btn-secondary btn-sm">
                                 📁 Subir Imagen
@@ -410,6 +461,378 @@
         </div>
     </div>
 
+    <!-- Modal para Movimientos de Inventario -->
+    <div id="modal-movimientos" class="modal hidden">
+        <div class="modal-content large">
+            <h3>📊 Movimientos de Inventario</h3>
+            
+            <div class="movimientos-controls">
+                <button onclick="mostrarFormularioMovimiento()" class="btn btn-primary">
+                    ➕ Registrar Movimiento
+                </button>
+                <div class="filter-group">
+                    <select id="filtro-tipo-movimiento">
+                        <option value="">Todos los tipos</option>
+                        <option value="entrada">Entradas</option>
+                        <option value="salida">Salidas</option>
+                        <option value="ajuste">Ajustes</option>
+                        <option value="devolucion">Devoluciones</option>
+                    </select>
+                    <input type="date" id="fecha-desde" class="date-filter">
+                    <input type="date" id="fecha-hasta" class="date-filter">
+                    <button onclick="filtrarMovimientos()" class="btn btn-secondary btn-sm">Filtrar</button>
+                </div>
+            </div>
+
+            <div class="tabla-movimientos">
+                <table class="inventory-table">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Producto</th>
+                            <th>Tipo</th>
+                            <th>Cantidad</th>
+                            <th>Motivo</th>
+                            <th>Usuario</th>
+                            <th>Stock Anterior</th>
+                            <th>Stock Actual</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-movimientos-body">
+                        <!-- Movimientos dinámicos -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="form-actions">
+                <button onclick="cerrarModal('modal-movimientos')" class="btn btn-secondary">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Registro de Movimiento -->
+    <div id="modal-movimiento" class="modal hidden">
+        <div class="modal-content">
+            <h3 id="titulo-modal-movimiento">📝 Registrar Movimiento</h3>
+            <form id="form-movimiento">
+                <div class="form-group">
+                    <label for="movimiento-producto">Producto*</label>
+                    <select id="movimiento-producto" name="producto_id" required>
+                        <option value="">Seleccionar producto</option>
+                        <!-- Se llenarán dinámicamente -->
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="movimiento-tipo">Tipo de Movimiento*</label>
+                    <select id="movimiento-tipo" name="tipo" required onchange="actualizarTipoMovimiento()">
+                        <option value="">Seleccionar tipo</option>
+                        <option value="entrada">📈 Entrada - Aumentar stock</option>
+                        <option value="salida">📉 Salida - Reducir stock</option>
+                        <option value="ajuste">⚖️ Ajuste - Corrección</option>
+                        <option value="devolucion">🔄 Devolución</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="movimiento-cantidad">Cantidad*</label>
+                    <input type="number" id="movimiento-cantidad" name="cantidad" 
+                           required min="1" placeholder="Ej: 5">
+                    <small id="stock-actual-info">Stock actual: -</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="movimiento-motivo">Motivo*</label>
+                    <select id="movimiento-motivo" name="motivo" required>
+                        <option value="">Seleccionar motivo</option>
+                        <!-- Se llenarán según el tipo -->
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="movimiento-observaciones">Observaciones</label>
+                    <textarea id="movimiento-observaciones" name="observaciones" rows="3"
+                              placeholder="Detalles adicionales del movimiento..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="movimiento-documento">Documento de Referencia</label>
+                    <input type="text" id="movimiento-documento" name="documento_referencia" 
+                           placeholder="Ej: Factura #001, Orden #123">
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-success">💾 Registrar Movimiento</button>
+                    <button type="button" onclick="cerrarModal('modal-movimiento')" class="btn btn-secondary">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal para Inventario Físico -->
+    <div id="modal-inventario-fisico" class="modal hidden">
+        <div class="modal-content large">
+            <h3>📋 Inventario Físico vs Sistema</h3>
+            
+            <div class="inventario-fisico-info">
+                <div class="info-card">
+                    <h4>¿Qué es el Inventario Físico?</h4>
+                    <p>El inventario físico es el recuento real de productos en el almacén. 
+                    Compáralo con el sistema para detectar diferencias y realizar ajustes.</p>
+                </div>
+            </div>
+
+            <div class="inventario-fisico-controls">
+                <button onclick="iniciarInventarioFisico()" class="btn btn-primary">
+                    🎯 Iniciar Conteo Físico
+                </button>
+                <button onclick="exportarInventarioFisico()" class="btn btn-info">
+                    📊 Exportar Lista de Conteo
+                </button>
+                <button onclick="mostrarHistorialInventarios()" class="btn btn-secondary">
+                    📈 Historial de Inventarios
+                </button>
+            </div>
+
+            <div id="conteo-fisico-container" style="display: none;">
+                <h4>📝 Registro de Conteo Físico</h4>
+                <div class="conteo-progress">
+                    <div class="progress-info">
+                        <span>Progreso: <span id="productos-contados">0</span> de <span id="total-productos-contar">0</span> productos</span>
+                        <div class="progress-bar">
+                            <div id="progress-conteo" class="progress-fill" style="width: 0%;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="conteo-table">
+                    <table class="inventory-table">
+                        <thead>
+                            <tr>
+                                <th>Producto</th>
+                                <th>Ubicación</th>
+                                <th>Stock Sistema</th>
+                                <th>Conteo Físico</th>
+                                <th>Diferencia</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-conteo-fisico">
+                            <!-- Se llena dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="conteo-acciones">
+                    <button onclick="finalizarInventarioFisico()" class="btn btn-success">
+                        ✅ Finalizar y Aplicar Ajustes
+                    </button>
+                    <button onclick="cancelarInventarioFisico()" class="btn btn-danger">
+                        ❌ Cancelar Conteo
+                    </button>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button onclick="cerrarModal('modal-inventario-fisico')" class="btn btn-secondary">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Modal para Reservas de Stock -->
+    <div id="modal-reservas" class="modal hidden">
+        <div class="modal-content large">
+            <h3>🔒 Reservas de Stock</h3>
+            
+            <div class="reservas-controls">
+                <button onclick="mostrarFormularioReserva()" class="btn btn-primary">
+                    ➕ Nueva Reserva
+                </button>
+                <div class="filter-group">
+                    <select id="filtro-estado-reserva">
+                        <option value="">Todos los estados</option>
+                        <option value="activa">Activas</option>
+                        <option value="parcial">Parcialmente usadas</option>
+                        <option value="completada">Completadas</option>
+                        <option value="vencida">Vencidas</option>
+                        <option value="cancelada">Canceladas</option>
+                    </select>
+                    <input type="date" id="fecha-vencimiento-filtro" class="date-filter" placeholder="Fecha límite">
+                    <button onclick="filtrarReservas()" class="btn btn-secondary btn-sm">Filtrar</button>
+                </div>
+            </div>
+
+            <div class="reservas-estadisticas">
+                <div class="stat-card">
+                    <h4 id="total-reservas">0</h4>
+                    <p>Total Reservas</p>
+                </div>
+                <div class="stat-card warning">
+                    <h4 id="reservas-vencidas">0</h4>
+                    <p>Vencidas</p>
+                </div>
+                <div class="stat-card success">
+                    <h4 id="productos-reservados">0</h4>
+                    <p>Productos Reservados</p>
+                </div>
+            </div>
+
+            <div class="tabla-reservas">
+                <table class="inventory-table">
+                    <thead>
+                        <tr>
+                            <th>ID Reserva</th>
+                            <th>Producto</th>
+                            <th>Cliente/Cotización</th>
+                            <th>Cantidad</th>
+                            <th>Usado</th>
+                            <th>Disponible</th>
+                            <th>Fecha Límite</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-reservas-body">
+                        <!-- Reservas dinámicas -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="form-actions">
+                <button onclick="cerrarModal('modal-reservas')" class="btn btn-secondary">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Nueva Reserva -->
+    <div id="modal-nueva-reserva" class="modal hidden">
+        <div class="modal-content">
+            <h3>🔒 Nueva Reserva de Stock</h3>
+            <form id="form-reserva">
+                <div class="form-group">
+                    <label for="reserva-producto">Producto*</label>
+                    <select id="reserva-producto" name="producto_id" required>
+                        <option value="">Seleccionar producto</option>
+                        <!-- Se llenarán dinámicamente -->
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="reserva-cantidad">Cantidad a Reservar*</label>
+                    <input type="number" id="reserva-cantidad" name="cantidad" 
+                           required min="1" placeholder="Ej: 4">
+                    <small id="stock-disponible-info">Stock disponible: -</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="reserva-cliente">Cliente/Empresa</label>
+                    <input type="text" id="reserva-cliente" name="cliente" 
+                           placeholder="Nombre del cliente o empresa">
+                </div>
+
+                <div class="form-group">
+                    <label for="reserva-cotizacion">ID Cotización</label>
+                    <input type="text" id="reserva-cotizacion" name="cotizacion_id" 
+                           placeholder="Ej: COT-2024-001">
+                </div>
+
+                <div class="form-group">
+                    <label for="reserva-fecha-limite">Fecha Límite*</label>
+                    <input type="date" id="reserva-fecha-limite" name="fecha_limite" required>
+                    <small>Fecha hasta la cual la reserva estará activa</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="reserva-observaciones">Observaciones</label>
+                    <textarea id="reserva-observaciones" name="observaciones" rows="3"
+                              placeholder="Detalles de la reserva..."></textarea>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-success">🔒 Crear Reserva</button>
+                    <button type="button" onclick="cerrarModal('modal-nueva-reserva')" class="btn btn-secondary">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal para Gestionar Reserva -->
+    <div id="modal-gestionar-reserva" class="modal hidden">
+        <div class="modal-content">
+            <h3 id="titulo-gestionar-reserva">🔒 Gestionar Reserva</h3>
+            
+            <div class="reserva-detalle">
+                <div class="detalle-grid">
+                    <div class="detalle-item">
+                        <strong>Producto:</strong>
+                        <span id="detalle-producto">-</span>
+                    </div>
+                    <div class="detalle-item">
+                        <strong>Cliente:</strong>
+                        <span id="detalle-cliente">-</span>
+                    </div>
+                    <div class="detalle-item">
+                        <strong>Cantidad Reservada:</strong>
+                        <span id="detalle-cantidad-reservada">-</span>
+                    </div>
+                    <div class="detalle-item">
+                        <strong>Cantidad Usada:</strong>
+                        <span id="detalle-cantidad-usada">-</span>
+                    </div>
+                    <div class="detalle-item">
+                        <strong>Cantidad Disponible:</strong>
+                        <span id="detalle-cantidad-disponible">-</span>
+                    </div>
+                    <div class="detalle-item">
+                        <strong>Fecha Límite:</strong>
+                        <span id="detalle-fecha-limite">-</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="reserva-acciones">
+                <h4>Acciones Disponibles</h4>
+                
+                <div class="accion-grupo">
+                    <h5>Usar Stock Reservado</h5>
+                    <div class="form-group">
+                        <input type="number" id="cantidad-usar" placeholder="Cantidad a usar" min="1">
+                        <button onclick="usarStockReservado()" class="btn btn-primary btn-sm">
+                            ✅ Usar Stock
+                        </button>
+                    </div>
+                </div>
+
+                <div class="accion-grupo">
+                    <h5>Modificar Reserva</h5>
+                    <div class="form-group">
+                        <input type="date" id="nueva-fecha-limite" placeholder="Nueva fecha límite">
+                        <button onclick="modificarFechaLimite()" class="btn btn-warning btn-sm">
+                            📅 Modificar Fecha
+                        </button>
+                    </div>
+                </div>
+
+                <div class="accion-grupo">
+                    <h5>Finalizar Reserva</h5>
+                    <button onclick="liberarReserva()" class="btn btn-info">
+                        🔓 Liberar Stock
+                    </button>
+                    <button onclick="cancelarReserva()" class="btn btn-danger">
+                        ❌ Cancelar Reserva
+                    </button>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button onclick="cerrarModal('modal-gestionar-reserva')" class="btn btn-secondary">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
     <script src="/js/utils.js"></script>
     <script src="/js/admin-inventario.js"></script>
     <script>

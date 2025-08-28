@@ -61,8 +61,18 @@ window.AppUtils = {
     },
 
     validarMedidaLlanta(medida) {
+        // Regex más flexible para diferentes formatos de medidas de llantas
+        // Permite: 205/55R16, 185/60R15, 235/50R18, etc.
         const re = /^\d{3}\/\d{2}R\d{2}$/;
-        return re.test(medida);
+        
+        // Si no coincide con el formato estándar, verificar otros formatos comunes
+        if (!re.test(medida)) {
+            // Formatos alternativos: 175/70R13, 31x10.5R15, etc.
+            const reAlt = /^\d{2,3}\/\d{2}R\d{2}$|^\d{2,3}\/\d{2,3}R\d{2}$|^\d{2}x\d{1,2}\.?\d?R\d{2}$/;
+            return reAlt.test(medida);
+        }
+        
+        return true;
     },
 
     // Sanitización mejorada

@@ -4514,3 +4514,407 @@ input, select, textarea {
         transform: translate(-50%, -50%);
     }
 }
+
+/* =================================
+   VALIDACIÓN DE FORMULARIOS
+   ================================= */
+
+/* Campo con error */
+.form-group input.error,
+.form-group select.error,
+.form-group textarea.error {
+    border-color: var(--color-danger) !important;
+    box-shadow: 0 0 0 2px rgba(231, 76, 60, 0.2) !important;
+    background-color: rgba(231, 76, 60, 0.05);
+}
+
+/* Mensaje de error */
+.error-message {
+    color: var(--color-danger) !important;
+    font-size: var(--font-size-xs);
+    margin-top: var(--spacing-xs);
+    display: block;
+    animation: fadeIn 0.3s ease;
+}
+
+/* Animación para mensajes de error */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* =================================
+   VISTA HÍBRIDA - INVENTARIO
+   ================================= */
+
+/* Toggle de vista */
+.view-toggle {
+    display: flex;
+    gap: var(--spacing-xs);
+    margin-right: var(--spacing-base);
+    border: 1px solid var(--color-gray-light);
+    border-radius: var(--border-radius-base);
+    padding: 2px;
+    background: var(--color-white);
+}
+
+.view-toggle .btn {
+    border: none !important;
+    border-radius: calc(var(--border-radius-base) - 2px) !important;
+    padding: var(--spacing-sm) var(--spacing-base);
+    font-size: var(--font-size-sm);
+    transition: all 0.2s ease;
+    background: transparent;
+}
+
+.view-toggle .btn.active {
+    background: var(--color-primary) !important;
+    color: var(--color-white) !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.view-toggle .btn:not(.active):hover {
+    background: var(--color-gray-light) !important;
+}
+
+/* Vista de tarjetas */
+.products-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: var(--spacing-lg);
+    padding: var(--spacing-base);
+}
+
+.product-card {
+    background: var(--color-white);
+    border: 1px solid var(--color-gray-light);
+    border-radius: var(--border-radius-base);
+    padding: var(--spacing-lg);
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.product-card:hover {
+    border-color: var(--color-primary);
+    box-shadow: 0 4px 12px rgba(52, 152, 219, 0.1);
+    transform: translateY(-2px);
+}
+
+.product-card-header {
+    display: flex;
+    gap: var(--spacing-base);
+    margin-bottom: var(--spacing-base);
+}
+
+.product-card-image {
+    width: 80px;
+    height: 80px;
+    border-radius: var(--border-radius-base);
+    object-fit: cover;
+    border: 1px solid var(--color-gray-light);
+    flex-shrink: 0;
+}
+
+.product-card-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.product-card-title {
+    font-size: var(--font-size-lg);
+    font-weight: 600;
+    color: var(--color-dark);
+    margin: 0 0 var(--spacing-xs) 0;
+    word-wrap: break-word;
+}
+
+.product-card-subtitle {
+    color: var(--color-gray);
+    font-size: var(--font-size-sm);
+    margin: 0 0 var(--spacing-sm) 0;
+}
+
+.product-card-details {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-base);
+    margin-bottom: var(--spacing-base);
+}
+
+.product-detail-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.product-detail-label {
+    font-size: var(--font-size-xs);
+    color: var(--color-gray);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 500;
+}
+
+.product-detail-value {
+    font-size: var(--font-size-base);
+    font-weight: 500;
+}
+
+.stock-value {
+    color: var(--color-success);
+}
+
+.stock-value.bajo {
+    color: var(--color-warning);
+}
+
+.stock-value.agotado {
+    color: var(--color-danger);
+}
+
+.product-price {
+    font-size: var(--font-size-lg);
+    font-weight: 600;
+    color: var(--color-primary);
+}
+
+.product-ubicacion {
+    background: var(--color-light);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: var(--border-radius-sm);
+    font-size: var(--font-size-sm);
+    color: var(--color-dark);
+    display: inline-block;
+}
+
+.product-card-status {
+    position: absolute;
+    top: var(--spacing-base);
+    right: var(--spacing-base);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: var(--border-radius-base);
+    font-size: var(--font-size-xs);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.status-disponible {
+    background: rgba(39, 174, 96, 0.1);
+    color: var(--color-success);
+    border: 1px solid rgba(39, 174, 96, 0.2);
+}
+
+.status-bajo {
+    background: rgba(243, 156, 18, 0.1);
+    color: var(--color-warning);
+    border: 1px solid rgba(243, 156, 18, 0.2);
+}
+
+.status-agotado {
+    background: rgba(231, 76, 60, 0.1);
+    color: var(--color-danger);
+    border: 1px solid rgba(231, 76, 60, 0.2);
+}
+
+.product-card-actions {
+    display: flex;
+    gap: var(--spacing-sm);
+    margin-top: var(--spacing-lg);
+    border-top: 1px solid var(--color-gray-light);
+    padding-top: var(--spacing-base);
+}
+
+.product-card-actions .btn {
+    flex: 1;
+    font-size: var(--font-size-sm);
+    padding: var(--spacing-sm) var(--spacing-base);
+}
+
+/* Contenedor de tabla con scroll horizontal responsive */
+.inventory-table-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch; /* Scroll suave en móviles */
+}
+
+/* Tabla compacta */
+.inventory-table.compact {
+    margin-top: 0;
+    width: 100%;
+    table-layout: auto; /* Permite que la tabla se ajuste naturalmente */
+    min-width: max-content; /* Se ajusta al contenido mínimo necesario */
+}
+
+.inventory-table.compact th,
+.inventory-table.compact td {
+    padding: var(--spacing-base);
+    vertical-align: middle;
+}
+
+.inventory-table.compact .product-cell {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-base);
+    min-width: 280px;
+    max-width: 0; /* Fuerza que respete el ancho de la columna */
+    overflow: hidden;
+}
+
+.inventory-table.compact .product-image {
+    width: 50px;
+    height: 50px;
+    border-radius: var(--border-radius-sm);
+    object-fit: cover;
+    border: 1px solid var(--color-gray-light);
+    flex-shrink: 0;
+}
+
+.inventory-table.compact .product-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.inventory-table.compact .product-name {
+    font-weight: 600;
+    color: var(--color-dark);
+    margin: 0 0 2px 0;
+    font-size: var(--font-size-base);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.inventory-table.compact .product-specs {
+    color: var(--color-gray);
+    font-size: var(--font-size-sm);
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.inventory-table.compact .ubicacion-cell {
+    font-size: var(--font-size-sm);
+    background: var(--color-light);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: var(--border-radius-sm);
+    min-width: 80px;
+    text-align: center;
+}
+
+.inventory-table.compact .stock-cell {
+    font-weight: 600;
+    text-align: center;
+    min-width: 80px;
+}
+
+.inventory-table.compact .price-cell {
+    font-weight: 600;
+    color: var(--color-primary);
+    text-align: right;
+    min-width: 100px;
+}
+
+.inventory-table.compact .status-cell {
+    text-align: center;
+    min-width: 100px;
+}
+
+.inventory-table.compact .actions-column {
+    width: 160px;
+    text-align: center;
+}
+
+.inventory-table.compact .actions-cell {
+    display: flex;
+    gap: var(--spacing-xs);
+    justify-content: center;
+    align-items: center;
+}
+
+.inventory-table.compact .actions-cell .btn {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    font-size: var(--font-size-xs);
+    border-radius: var(--border-radius-sm);
+}
+
+/* Status badges para tabla */
+.status-badge {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: var(--border-radius-base);
+    font-size: var(--font-size-xs);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: inline-block;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .products-grid {
+        grid-template-columns: 1fr;
+        gap: var(--spacing-base);
+        padding: var(--spacing-sm);
+    }
+    
+    .product-card {
+        padding: var(--spacing-base);
+    }
+    
+    .product-card-details {
+        grid-template-columns: 1fr;
+        gap: var(--spacing-sm);
+    }
+    
+    .view-toggle {
+        margin-right: var(--spacing-sm);
+    }
+    
+    .view-toggle .btn {
+        padding: var(--spacing-xs) var(--spacing-sm);
+        font-size: var(--font-size-xs);
+    }
+    
+    /* En móvil, forzar vista de tarjetas */
+    #vista-tabla {
+        display: none !important;
+    }
+    
+    #vista-tarjetas {
+        display: block !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .product-card-header {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+    
+    .product-card-image {
+        width: 60px;
+        height: 60px;
+    }
+    
+    .product-card-actions {
+        flex-direction: column;
+    }
+    
+    .inventory-table.compact {
+        font-size: var(--font-size-sm);
+    }
+    
+    .inventory-table.compact .product-cell {
+        min-width: 200px;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacing-sm);
+    }
+    
+    .inventory-table.compact .product-image {
+        width: 40px;
+        height: 40px;
+    }
+}

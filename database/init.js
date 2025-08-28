@@ -203,6 +203,8 @@ function initDatabase() {
             proveedor TEXT,
             imagen_url TEXT,
             caracteristicas TEXT,
+            ubicacion_almacen TEXT,
+            codigo_barras TEXT,
             activo BOOLEAN DEFAULT 1,
             fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP,
             fecha_actualizacion DATETIME DEFAULT CURRENT_TIMESTAMP
