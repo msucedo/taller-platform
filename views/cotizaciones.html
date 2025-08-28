@@ -464,6 +464,66 @@
     </div>
 
     <div id="message" class="message hidden"></div>
+    
+    <!-- Modal de Confirmación para Enviar -->
+    <div id="modalEnviarConfirm" class="modal-cotizacion hidden">
+        <div class="modal-content-cotizacion" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3>📧 Enviar Cotización</h3>
+                <button onclick="cerrarModalEnviar()" class="btn-close">×</button>
+            </div>
+            <div class="modal-body">
+                <p id="enviarTexto">¿Está seguro de que desea enviar esta cotización por email al cliente?</p>
+                <p><small><strong>Nota:</strong> Esto cambiará el estado de la cotización a "Pendiente".</small></p>
+            </div>
+            <div class="form-actions">
+                <button id="btnConfirmarEnvio" class="btn btn-primary">📧 Enviar</button>
+                <button onclick="cerrarModalEnviar()" class="btn btn-secondary">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Confirmación para Aprobar -->
+    <div id="modalAprobarConfirm" class="modal-cotizacion hidden">
+        <div class="modal-content-cotizacion" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3>✅ Aprobar Cotización</h3>
+                <button onclick="cerrarModalAprobar()" class="btn-close">×</button>
+            </div>
+            <div class="modal-body">
+                <p>¿Está seguro de que desea aprobar esta cotización?</p>
+                <div class="form-group">
+                    <label for="comentarioAprobacion">Comentario (opcional):</label>
+                    <textarea id="comentarioAprobacion" rows="3" placeholder="Agregar un comentario sobre la aprobación..."></textarea>
+                </div>
+            </div>
+            <div class="form-actions">
+                <button id="btnConfirmarAprobacion" class="btn btn-success">✅ Aprobar</button>
+                <button onclick="cerrarModalAprobar()" class="btn btn-secondary">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Confirmación para Rechazar -->
+    <div id="modalRechazarConfirm" class="modal-cotizacion hidden">
+        <div class="modal-content-cotizacion" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3>❌ Rechazar Cotización</h3>
+                <button onclick="cerrarModalRechazar()" class="btn-close">×</button>
+            </div>
+            <div class="modal-body">
+                <p>¿Está seguro de que desea rechazar esta cotización?</p>
+                <div class="form-group">
+                    <label for="comentarioRechazo">Motivo del rechazo:</label>
+                    <textarea id="comentarioRechazo" rows="3" placeholder="Indique el motivo del rechazo..." required></textarea>
+                </div>
+            </div>
+            <div class="form-actions">
+                <button id="btnConfirmarRechazo" class="btn btn-danger">❌ Rechazar</button>
+                <button onclick="cerrarModalRechazar()" class="btn btn-secondary">Cancelar</button>
+            </div>
+        </div>
+    </div>
     </div>
 
     <script src="/js/utils.js"></script>

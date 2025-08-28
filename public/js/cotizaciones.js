@@ -373,13 +373,641 @@ async function guardarCotizacion(e) {
     }
 }
 
-// Funciones placeholder para las demás acciones
-function verCotizacion(id) { AppUtils.mostrarMensaje('Vista detallada en desarrollo', 'info'); }
-function editarCotizacion(id) { AppUtils.mostrarMensaje('Edición en desarrollo', 'info'); }
-function duplicarCotizacion(id) { AppUtils.mostrarMensaje('Duplicar en desarrollo', 'info'); }
-function generarPDF(id) { AppUtils.mostrarMensaje('PDF en desarrollo', 'info'); }
-function enviarCotizacion(id) { AppUtils.mostrarMensaje('Envío en desarrollo', 'info'); }
-function cambiarEstado(id, estado) { AppUtils.mostrarMensaje('Cambio de estado en desarrollo', 'info'); }
+// ===== FUNCIONES DE COTIZACIONES COMPLETAS =====
+
+// Ver cotización detallada
+async function verCotizacion(id) {
+    try {
+        const token = localStorage.getItem('empleadoToken');
+        const response = await fetch(`/api/cotizaciones/${id}`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        if (response.ok) {
+            const cotizacion = await response.json();
+            mostrarModalDetalleCotizacion(cotizacion);
+        } else {
+            AppUtils.mostrarMensaje('Error al cargar la cotización', 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        AppUtils.mostrarMensaje('Error de conexión', 'error');
+    }
+}
+
+// Editar cotización existente
+async function editarCotizacion(id) {
+    try {
+        const token = localStorage.getItem('empleadoToken');
+        const response = await fetch(`/api/cotizaciones/${id}`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        if (response.ok) {
+            const cotizacion = await response.json();
+            cargarCotizacionEnFormulario(cotizacion);
+        } else {
+            AppUtils.mostrarMensaje('Error al cargar la cotización', 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        AppUtils.mostrarMensaje('Error de conexión', 'error');
+    }
+}
+
+// Duplicar cotización como nueva
+async function duplicarCotizacion(id) {
+    try {
+        const token = localStorage.getItem('empleadoToken');
+        const response = await fetch(`/api/cotizaciones/${id}`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        if (response.ok) {
+            const cotizacion = await response.json();
+            duplicarCotizacionEnFormulario(cotizacion);
+        } else {
+            AppUtils.mostrarMensaje('Error al cargar la cotización', 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        AppUtils.mostrarMensaje('Error de conexión', 'error');
+    }
+}
+
+// Generar PDF de cotización
+async function generarPDF(id) {
+    try {
+        const token = localStorage.getItem('empleadoToken');
+        const response = await fetch(`/api/cotizaciones/${id}`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        if (response.ok) {
+            const cotizacion = await response.json();
+            await generarPDFCotizacion(cotizacion);
+        } else {
+            AppUtils.mostrarMensaje('Error al cargar la cotización', 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        AppUtils.mostrarMensaje('Error de conexión', 'error');
+    }
+}
+
+// Enviar cotización por email
+async function enviarCotizacion(id) {
+    mostrarModalEnviar(id);
+}
+
+function mostrarModalEnviar(id) {
+    document.getElementById('modalEnviarConfirm').classList.remove('hidden');
+    document.getElementById('modalEnviarConfirm').style.display = 'flex';
+    
+    // Configurar botón de confirmación
+    const btnConfirmar = document.getElementById('btnConfirmarEnvio');
+    btnConfirmar.onclick = () => ejecutarEnvioCotizacion(id);
+}
+
+function cerrarModalEnviar() {
+    document.getElementById('modalEnviarConfirm').classList.add('hidden');
+    document.getElementById('modalEnviarConfirm').style.display = 'none';
+}
+
+async function ejecutarEnvioCotizacion(id) {
+    cerrarModalEnviar();
+    
+    try {
+        const token = localStorage.getItem('empleadoToken');
+        const response = await fetch(`/api/cotizaciones/${id}/enviar`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            const result = await response.json();
+            AppUtils.mostrarMensaje('Cotización enviada exitosamente al cliente', 'success');
+            loadCotizaciones(); // Recargar para actualizar estado
+        } else {
+            const error = await response.json();
+            AppUtils.mostrarMensaje(error.error || 'Error al enviar la cotización', 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        AppUtils.mostrarMensaje('Error de conexión', 'error');
+    }
+}
+
+// Cambiar estado de cotización
+async function cambiarEstado(id, estado) {
+    if (estado === 'aprobada') {
+        mostrarModalAprobar(id);
+    } else if (estado === 'rechazada') {
+        mostrarModalRechazar(id);
+    } else {
+        // Para otros estados usar el método original
+        const estadosTexto = { 'expirada': 'marcar como expirada' };
+        const comentario = prompt(`Comentario para ${estadosTexto[estado]} la cotización (opcional):`);
+        if (comentario === null) return; // Usuario canceló
+        ejecutarCambioEstado(id, estado, comentario);
+    }
+}
+
+function mostrarModalAprobar(id) {
+    document.getElementById('modalAprobarConfirm').classList.remove('hidden');
+    document.getElementById('modalAprobarConfirm').style.display = 'flex';
+    document.getElementById('comentarioAprobacion').value = '';
+    
+    // Configurar botón de confirmación
+    const btnConfirmar = document.getElementById('btnConfirmarAprobacion');
+    btnConfirmar.onclick = () => {
+        const comentario = document.getElementById('comentarioAprobacion').value;
+        cerrarModalAprobar();
+        ejecutarCambioEstado(id, 'aprobada', comentario);
+    };
+}
+
+function cerrarModalAprobar() {
+    document.getElementById('modalAprobarConfirm').classList.add('hidden');
+    document.getElementById('modalAprobarConfirm').style.display = 'none';
+}
+
+function mostrarModalRechazar(id) {
+    document.getElementById('modalRechazarConfirm').classList.remove('hidden');
+    document.getElementById('modalRechazarConfirm').style.display = 'flex';
+    document.getElementById('comentarioRechazo').value = '';
+    
+    // Configurar botón de confirmación
+    const btnConfirmar = document.getElementById('btnConfirmarRechazo');
+    btnConfirmar.onclick = () => {
+        const comentario = document.getElementById('comentarioRechazo').value;
+        
+        if (!comentario.trim()) {
+            AppUtils.mostrarMensaje('Debe especificar un motivo para el rechazo', 'error');
+            return;
+        }
+        
+        cerrarModalRechazar();
+        ejecutarCambioEstado(id, 'rechazada', comentario);
+    };
+}
+
+function cerrarModalRechazar() {
+    document.getElementById('modalRechazarConfirm').classList.add('hidden');
+    document.getElementById('modalRechazarConfirm').style.display = 'none';
+}
+
+async function ejecutarCambioEstado(id, estado, comentario) {
+    const estadosTexto = {
+        'aprobada': 'aprobar',
+        'rechazada': 'rechazar',
+        'expirada': 'marcar como expirada'
+    };
+    
+    try {
+        const token = localStorage.getItem('empleadoToken');
+        const response = await fetch(`/api/cotizaciones/${id}/estado`, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                estado: estado,
+                comentario: comentario || null
+            })
+        });
+        
+        if (response.ok) {
+            const result = await response.json();
+            AppUtils.mostrarMensaje(`Cotización ${estadosTexto[estado]}da exitosamente`, 'success');
+            loadCotizaciones();
+            loadEstadisticas();
+        } else {
+            const error = await response.json();
+            AppUtils.mostrarMensaje(error.error || 'Error al cambiar estado', 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        AppUtils.mostrarMensaje('Error de conexión', 'error');
+    }
+}
+
+// ===== FUNCIONES AUXILIARES =====
+
+// Mostrar modal con detalles de la cotización
+function mostrarModalDetalleCotizacion(cotizacion) {
+    const fechaCreacion = new Date(cotizacion.fecha_creacion).toLocaleDateString('es-ES');
+    const fechaExpiracion = cotizacion.fecha_expiracion ? 
+        new Date(cotizacion.fecha_expiracion).toLocaleDateString('es-ES') : 'No especificada';
+    
+    let itemsHtml = '';
+    if (cotizacion.items && cotizacion.items.length > 0) {
+        itemsHtml = cotizacion.items.map(item => `
+            <tr>
+                <td>${item.nombre}</td>
+                <td>${item.cantidad}</td>
+                <td>$${AppUtils.formatMoney(item.precio_unitario)}</td>
+                <td>${item.descuento_porcentaje}%</td>
+                <td>$${AppUtils.formatMoney(item.cantidad * item.precio_unitario * (1 - item.descuento_porcentaje/100))}</td>
+            </tr>
+        `).join('');
+    }
+    
+    const modalHtml = `
+        <div id="modalDetalleCotizacion" class="modal-cotizacion" style="display: flex;">
+            <div class="modal-content-cotizacion">
+                <div class="modal-header">
+                    <h3>📋 Detalle de Cotización ${cotizacion.numero}</h3>
+                    <button onclick="cerrarModalDetalle()" class="btn-close">×</button>
+                </div>
+                <div class="modal-body">
+                    <!-- Información del Cliente -->
+                    <div class="form-step">
+                        <div class="step-title">👤 Información del Cliente</div>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>Nombre:</label>
+                                <p><strong>${cotizacion.cliente_nombre}</strong></p>
+                            </div>
+                            <div class="form-group">
+                                <label>Email:</label>
+                                <p>${cotizacion.cliente_email}</p>
+                            </div>
+                            <div class="form-group">
+                                <label>Teléfono:</label>
+                                <p>${cotizacion.cliente_telefono || 'No especificado'}</p>
+                            </div>
+                            <div class="form-group">
+                                <label>Empresa:</label>
+                                <p>${cotizacion.cliente_empresa || 'No especificada'}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Información de la Cotización -->
+                    <div class="form-step">
+                        <div class="step-title">📄 Información de la Cotización</div>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>Estado:</label>
+                                <p><span class="cotizacion-estado estado-${cotizacion.estado}">${cotizacion.estado}</span></p>
+                            </div>
+                            <div class="form-group">
+                                <label>Fecha Creación:</label>
+                                <p>${fechaCreacion}</p>
+                            </div>
+                            <div class="form-group">
+                                <label>Válida hasta:</label>
+                                <p>${fechaExpiracion}</p>
+                            </div>
+                            <div class="form-group">
+                                <label>Creada por:</label>
+                                <p>${cotizacion.usuario_nombre}</p>
+                            </div>
+                        </div>
+                        <div class="form-group form-group-full">
+                            <label>Título:</label>
+                            <p><strong>${cotizacion.titulo}</strong></p>
+                        </div>
+                        <div class="form-group form-group-full">
+                            <label>Descripción:</label>
+                            <p>${cotizacion.descripcion || 'Sin descripción'}</p>
+                        </div>
+                    </div>
+
+                    <!-- Items -->
+                    <div class="form-step">
+                        <div class="step-title">📦 Items de la Cotización</div>
+                        <div class="items-section">
+                            <table style="width: 100%; border-collapse: collapse;">
+                                <thead>
+                                    <tr style="background: #dee2e6;">
+                                        <th style="padding: 8px; text-align: left;">Producto</th>
+                                        <th style="padding: 8px;">Cantidad</th>
+                                        <th style="padding: 8px;">Precio Unit.</th>
+                                        <th style="padding: 8px;">Desc. %</th>
+                                        <th style="padding: 8px;">Subtotal</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${itemsHtml}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Totales -->
+                    <div class="form-step">
+                        <div class="step-title">💰 Totales</div>
+                        <div class="totales-section">
+                            <div class="total-row">
+                                <span>Subtotal:</span>
+                                <span>$${AppUtils.formatMoney(cotizacion.subtotal || 0)}</span>
+                            </div>
+                            <div class="total-row">
+                                <span>Descuento (${cotizacion.descuento_porcentaje || 0}%):</span>
+                                <span>$${AppUtils.formatMoney(cotizacion.descuento_monto || 0)}</span>
+                            </div>
+                            <div class="total-row">
+                                <span>Impuesto (${cotizacion.impuesto_porcentaje || 0}%):</span>
+                                <span>$${AppUtils.formatMoney(cotizacion.impuesto_monto || 0)}</span>
+                            </div>
+                            <div class="total-row total-final">
+                                <span>TOTAL:</span>
+                                <span>$${AppUtils.formatMoney(cotizacion.total || 0)}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Términos y Condiciones -->
+                    ${cotizacion.terminos_condiciones ? `
+                    <div class="form-step">
+                        <div class="step-title">📋 Términos y Condiciones</div>
+                        <p>${cotizacion.terminos_condiciones}</p>
+                    </div>` : ''}
+
+                    <!-- Notas Internas -->
+                    ${cotizacion.notas_internas ? `
+                    <div class="form-step">
+                        <div class="step-title">📝 Notas Internas</div>
+                        <p>${cotizacion.notas_internas}</p>
+                    </div>` : ''}
+
+                    <div class="form-actions" style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; text-align: center;">
+                        <button onclick="cerrarModalDetalle()" class="btn btn-secondary">Cerrar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Agregar el modal al body
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+}
+
+// Cerrar modal de detalle
+function cerrarModalDetalle() {
+    const modal = document.getElementById('modalDetalleCotizacion');
+    if (modal) {
+        modal.remove();
+    }
+}
+
+// Cargar cotización en formulario para edición
+function cargarCotizacionEnFormulario(cotizacion) {
+    currentCotizacion = cotizacion;
+    document.getElementById('modalTitle').textContent = 'Editar Cotización';
+    
+    // Llenar campos básicos
+    document.getElementById('cotizacionId').value = cotizacion.id;
+    document.getElementById('clienteNombre').value = cotizacion.cliente_nombre;
+    document.getElementById('clienteEmail').value = cotizacion.cliente_email;
+    document.getElementById('clienteTelefono').value = cotizacion.cliente_telefono || '';
+    document.getElementById('clienteEmpresa').value = cotizacion.cliente_empresa || '';
+    document.getElementById('cotizacionTitulo').value = cotizacion.titulo;
+    document.getElementById('cotizacionDescripcion').value = cotizacion.descripcion || '';
+    document.getElementById('validezDias').value = cotizacion.validez_dias || 30;
+    document.getElementById('descuentoGeneral').value = cotizacion.descuento_porcentaje || 0;
+    document.getElementById('impuestoPorcentaje').value = cotizacion.impuesto_porcentaje || 16;
+    document.getElementById('terminosCondiciones').value = cotizacion.terminos_condiciones || '';
+    document.getElementById('notasInternas').value = cotizacion.notas_internas || '';
+    
+    // Limpiar items existentes
+    document.getElementById('itemsContainer').innerHTML = '';
+    itemCounter = 0;
+    
+    // Cargar items
+    if (cotizacion.items && cotizacion.items.length > 0) {
+        cotizacion.items.forEach(item => {
+            agregarItem(item);
+        });
+    } else {
+        agregarItem(); // Agregar al menos un item vacío
+    }
+    
+    calcularTotales();
+    
+    // Mostrar modal
+    const modal = document.getElementById('modalCotizacion');
+    modal.classList.remove('hidden');
+    modal.style.display = 'flex';
+}
+
+// Duplicar cotización en formulario
+function duplicarCotizacionEnFormulario(cotizacion) {
+    document.getElementById('modalTitle').textContent = 'Duplicar Cotización';
+    
+    // Llenar campos básicos (sin ID para crear nueva)
+    document.getElementById('cotizacionId').value = '';
+    document.getElementById('clienteNombre').value = cotizacion.cliente_nombre;
+    document.getElementById('clienteEmail').value = cotizacion.cliente_email;
+    document.getElementById('clienteTelefono').value = cotizacion.cliente_telefono || '';
+    document.getElementById('clienteEmpresa').value = cotizacion.cliente_empresa || '';
+    document.getElementById('cotizacionTitulo').value = cotizacion.titulo + ' (Copia)';
+    document.getElementById('cotizacionDescripcion').value = cotizacion.descripcion || '';
+    document.getElementById('validezDias').value = cotizacion.validez_dias || 30;
+    document.getElementById('descuentoGeneral').value = cotizacion.descuento_porcentaje || 0;
+    document.getElementById('impuestoPorcentaje').value = cotizacion.impuesto_porcentaje || 16;
+    document.getElementById('terminosCondiciones').value = cotizacion.terminos_condiciones || '';
+    document.getElementById('notasInternas').value = cotizacion.notas_internas || '';
+    
+    // Limpiar items existentes
+    document.getElementById('itemsContainer').innerHTML = '';
+    itemCounter = 0;
+    
+    // Cargar items
+    if (cotizacion.items && cotizacion.items.length > 0) {
+        cotizacion.items.forEach(item => {
+            agregarItem(item);
+        });
+    } else {
+        agregarItem(); // Agregar al menos un item vacío
+    }
+    
+    calcularTotales();
+    
+    // Mostrar modal
+    const modal = document.getElementById('modalCotizacion');
+    modal.classList.remove('hidden');
+    modal.style.display = 'flex';
+    
+    AppUtils.mostrarMensaje('Cotización duplicada. Modifique los campos necesarios y guarde.', 'info');
+}
+
+// Generar PDF de cotización usando jsPDF
+async function generarPDFCotizacion(cotizacion) {
+    try {
+        AppUtils.mostrarMensaje('Generando PDF...', 'info');
+        
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        
+        // Configuración
+        const pageWidth = doc.internal.pageSize.width;
+        const margin = 20;
+        let yPosition = 20;
+        
+        // Header - Logo y título
+        doc.setFontSize(20);
+        doc.setTextColor(0, 100, 200);
+        doc.text('COTIZACIÓN', pageWidth/2, yPosition, { align: 'center' });
+        yPosition += 10;
+        
+        doc.setFontSize(12);
+        doc.setTextColor(0, 0, 0);
+        doc.text(`Número: ${cotizacion.numero}`, pageWidth/2, yPosition, { align: 'center' });
+        yPosition += 20;
+        
+        // Información de la empresa
+        doc.setFontSize(10);
+        doc.text('Llantera & Servicios Automotrices', margin, yPosition);
+        yPosition += 5;
+        doc.text('Tel: (555) 123-4567 | Email: info@llantera.com', margin, yPosition);
+        yPosition += 15;
+        
+        // Información del cliente
+        doc.setFontSize(12);
+        doc.setFont(undefined, 'bold');
+        doc.text('DATOS DEL CLIENTE:', margin, yPosition);
+        yPosition += 8;
+        
+        doc.setFont(undefined, 'normal');
+        doc.setFontSize(10);
+        doc.text(`Nombre: ${cotizacion.cliente_nombre}`, margin, yPosition);
+        yPosition += 5;
+        doc.text(`Email: ${cotizacion.cliente_email}`, margin, yPosition);
+        yPosition += 5;
+        if (cotizacion.cliente_telefono) {
+            doc.text(`Teléfono: ${cotizacion.cliente_telefono}`, margin, yPosition);
+            yPosition += 5;
+        }
+        if (cotizacion.cliente_empresa) {
+            doc.text(`Empresa: ${cotizacion.cliente_empresa}`, margin, yPosition);
+            yPosition += 5;
+        }
+        yPosition += 10;
+        
+        // Información de la cotización
+        doc.setFontSize(12);
+        doc.setFont(undefined, 'bold');
+        doc.text('INFORMACIÓN DE LA COTIZACIÓN:', margin, yPosition);
+        yPosition += 8;
+        
+        doc.setFont(undefined, 'normal');
+        doc.setFontSize(10);
+        doc.text(`Título: ${cotizacion.titulo}`, margin, yPosition);
+        yPosition += 5;
+        doc.text(`Fecha: ${new Date(cotizacion.fecha_creacion).toLocaleDateString('es-ES')}`, margin, yPosition);
+        yPosition += 5;
+        if (cotizacion.fecha_expiracion) {
+            doc.text(`Válida hasta: ${new Date(cotizacion.fecha_expiracion).toLocaleDateString('es-ES')}`, margin, yPosition);
+            yPosition += 5;
+        }
+        if (cotizacion.descripcion) {
+            doc.text(`Descripción: ${cotizacion.descripcion}`, margin, yPosition);
+            yPosition += 5;
+        }
+        yPosition += 10;
+        
+        // Items - Header de tabla
+        doc.setFontSize(10);
+        doc.setFont(undefined, 'bold');
+        doc.text('ITEM', margin, yPosition);
+        doc.text('CANT', margin + 80, yPosition);
+        doc.text('PRECIO', margin + 110, yPosition);
+        doc.text('DESC%', margin + 140, yPosition);
+        doc.text('SUBTOTAL', margin + 170, yPosition);
+        yPosition += 5;
+        
+        // Línea separadora
+        doc.line(margin, yPosition, pageWidth - margin, yPosition);
+        yPosition += 5;
+        
+        // Items - Contenido
+        doc.setFont(undefined, 'normal');
+        if (cotizacion.items && cotizacion.items.length > 0) {
+            cotizacion.items.forEach(item => {
+                const subtotal = item.cantidad * item.precio_unitario * (1 - item.descuento_porcentaje/100);
+                
+                doc.text(item.nombre.substring(0, 25), margin, yPosition);
+                doc.text(item.cantidad.toString(), margin + 80, yPosition);
+                doc.text(`$${AppUtils.formatMoney(item.precio_unitario)}`, margin + 110, yPosition);
+                doc.text(`${item.descuento_porcentaje}%`, margin + 140, yPosition);
+                doc.text(`$${AppUtils.formatMoney(subtotal)}`, margin + 170, yPosition);
+                yPosition += 5;
+                
+                // Descripción del item si existe
+                if (item.descripcion) {
+                    doc.setFontSize(8);
+                    doc.setTextColor(100, 100, 100);
+                    doc.text(item.descripcion.substring(0, 50), margin + 5, yPosition);
+                    doc.setTextColor(0, 0, 0);
+                    doc.setFontSize(10);
+                    yPosition += 4;
+                }
+            });
+        }
+        
+        yPosition += 10;
+        
+        // Totales
+        const totalesX = pageWidth - margin - 60;
+        doc.line(totalesX - 10, yPosition, pageWidth - margin, yPosition);
+        yPosition += 5;
+        
+        doc.text('Subtotal:', totalesX, yPosition);
+        doc.text(`$${AppUtils.formatMoney(cotizacion.subtotal || 0)}`, totalesX + 35, yPosition);
+        yPosition += 5;
+        
+        if (cotizacion.descuento_monto > 0) {
+            doc.text(`Descuento (${cotizacion.descuento_porcentaje}%):`, totalesX, yPosition);
+            doc.text(`$${AppUtils.formatMoney(cotizacion.descuento_monto)}`, totalesX + 35, yPosition);
+            yPosition += 5;
+        }
+        
+        doc.text(`Impuesto (${cotizacion.impuesto_porcentaje}%):`, totalesX, yPosition);
+        doc.text(`$${AppUtils.formatMoney(cotizacion.impuesto_monto || 0)}`, totalesX + 35, yPosition);
+        yPosition += 5;
+        
+        doc.setFont(undefined, 'bold');
+        doc.text('TOTAL:', totalesX, yPosition);
+        doc.text(`$${AppUtils.formatMoney(cotizacion.total)}`, totalesX + 35, yPosition);
+        yPosition += 15;
+        
+        // Términos y condiciones
+        if (cotizacion.terminos_condiciones) {
+            doc.setFont(undefined, 'bold');
+            doc.setFontSize(10);
+            doc.text('TÉRMINOS Y CONDICIONES:', margin, yPosition);
+            yPosition += 5;
+            
+            doc.setFont(undefined, 'normal');
+            doc.setFontSize(9);
+            const terms = doc.splitTextToSize(cotizacion.terminos_condiciones, pageWidth - 2 * margin);
+            doc.text(terms, margin, yPosition);
+        }
+        
+        // Generar y descargar
+        doc.save(`Cotizacion-${cotizacion.numero}.pdf`);
+        AppUtils.mostrarMensaje('PDF generado exitosamente', 'success');
+        
+    } catch (error) {
+        console.error('Error generando PDF:', error);
+        AppUtils.mostrarMensaje('Error al generar el PDF', 'error');
+    }
+}
 
 // Funciones para datos de vehículos (mantenemos compatibilidad)
 async function cargarMarcas() {

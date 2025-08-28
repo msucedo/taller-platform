@@ -2002,7 +2002,7 @@ footer a:hover {
 }
 
 /* Tabs */
-.admin-tabs, .empleado-tabs {
+.admin-tabs, .empleado-tabs, .proveedor-tabs {
     display: flex;
     background: #f8f9fa;
     border-radius: 8px;
@@ -2042,6 +2042,143 @@ footer a:hover {
 
 .tab-content.active {
     display: block;
+}
+
+.tab-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 20px;
+    padding: 10px 0;
+}
+
+/* Modal Cotización Styles */
+.items-actions {
+    margin-bottom: 15px;
+}
+
+/* Error messages for form validation */
+.field-error {
+    border-color: var(--color-danger) !important;
+    background-color: #ffeaea !important;
+}
+
+.error-message {
+    color: var(--color-danger);
+    font-size: 0.875rem;
+    margin-top: 5px;
+    display: none;
+    font-weight: 500;
+}
+
+.modal-header {
+    background: var(--color-primary);
+    color: white;
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-body {
+    padding: 30px;
+}
+
+.form-step {
+    margin-bottom: 30px;
+}
+
+.step-title {
+    font-size: 1.3rem;
+    font-weight: bold;
+    margin-bottom: 15px;
+    color: var(--color-primary);
+    border-bottom: 2px solid #eee;
+    padding-bottom: 10px;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.form-group-full {
+    grid-column: 1 / -1;
+}
+
+.items-section {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 20px;
+    margin-top: 20px;
+}
+
+.item-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr 1fr auto;
+    gap: 10px;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid #ddd;
+}
+
+.item-row:last-child {
+    border-bottom: none;
+}
+
+.totales-section {
+    background: #e3f2fd;
+    border-radius: 8px;
+    padding: 20px;
+    margin-top: 20px;
+}
+
+.total-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.total-final {
+    font-size: 1.3rem;
+    font-weight: bold;
+    border-top: 2px solid var(--color-primary);
+    padding-top: 10px;
+}
+
+.btn-add-item {
+    background: var(--color-success) !important;
+    color: white !important;
+}
+
+.btn-remove-item {
+    background: var(--color-danger) !important;
+    color: white !important;
+}
+
+.btn-close {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: white;
+    cursor: pointer;
+    padding: 5px 10px;
+    border-radius: 4px;
+}
+
+.btn-close:hover {
+    background: rgba(255,255,255,0.1);
+}
+
+@media (max-width: 768px) {
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .item-row {
+        grid-template-columns: 1fr;
+        gap: 5px;
+    }
 }
 
 /* Dashboard Section */
@@ -2528,7 +2665,7 @@ footer a:hover {
     }
     
     /* Improve tabs for iPhone */
-    .admin-tabs, .empleado-tabs {
+    .admin-tabs, .empleado-tabs, .proveedor-tabs {
         padding: 2px;
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
@@ -3063,7 +3200,7 @@ input, select, textarea {
         justify-content: space-between;
     }
     
-    .admin-tabs, .empleado-tabs {
+    .admin-tabs, .empleado-tabs, .proveedor-tabs {
         flex-direction: row;
         overflow-x: auto;
         padding: 4px;

@@ -135,7 +135,8 @@ sqlite3 database/taller.db "UPDATE usuarios SET activo = 1"
 
 ## Notas, mejoras
 - arreglar las imagenes parpadeantes, es molesto
-- 
+    ## nueva implementacion cotizaciones
+    
 
 
 ## 📄 Licencia
