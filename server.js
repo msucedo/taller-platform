@@ -565,6 +565,14 @@ app.get('/admin/inventario', (req, res) => {
     res.sendFile(path.join(__dirname, 'views', 'admin-inventario.html'));
 });
 
+app.get('/admin/movimientos', (req, res) => {
+    res.sendFile(path.join(__dirname, 'views', 'admin-movimientos.html'));
+});
+
+app.get('/admin/reservas', (req, res) => {
+    res.sendFile(path.join(__dirname, 'views', 'admin-reservas.html'));
+});
+
 // Ruta temporal para probar el inventario sin autenticación (ELIMINAR EN PRODUCCIÓN)
 app.get('/inventario-demo', (req, res) => {
     res.sendFile(path.join(__dirname, 'views', 'admin-inventario.html'));

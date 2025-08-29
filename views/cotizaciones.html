@@ -281,14 +281,37 @@
     </style>
 </head>
 <body>
-    <div class="cotizaciones-container">
-        <div class="cotizaciones-header">
-            <h1>📋 Gestión de Cotizaciones</h1>
-            <div class="header-actions">
-                <button onclick="nuevaCotizacion()" class="btn btn-primary">+ Nueva Cotización</button>
-                <button onclick="volverAlDashboard()" class="btn btn-secondary">← Volver al Dashboard</button>
+    <div class="container">
+        <header class="admin-header">
+            <div class="header-content">
+                <div class="header-info">
+                    <h1>💰 Gestión de Cotizaciones</h1>
+                    <p id="welcomeMessage">Sistema de Cotizaciones</p>
+                </div>
+                <div class="header-actions">
+                    <span class="user-badge admin">👑 Admin</span>
+                    <button onclick="cerrarSesion()" class="btn-logout">Cerrar Sesión</button>
+                </div>
             </div>
-        </div>
+        </header>
+
+        <main class="admin-main">
+            <!-- Navegación por tabs -->
+            <div class="admin-tabs">
+                <button class="tab-btn" onclick="irADashboard()">📋 Solicitudes</button>
+                <button class="tab-btn" onclick="irAEmpleados()">👥 Empleados</button>
+                <button class="tab-btn" onclick="irAReportes()">📊 Reportes</button>
+                <button class="tab-btn" onclick="irAConfiguracion()">⚙️ Configuración</button>
+                <button class="tab-btn active" onclick="irACotizaciones()">💰 Cotizaciones</button>
+                <button class="tab-btn" onclick="irAInventario()">📦 Inventario</button>
+            </div>
+
+        <div class="cotizaciones-container">
+            <div class="cotizaciones-header">
+                <div class="header-actions">
+                    <button onclick="nuevaCotizacion()" class="btn btn-primary">+ Nueva Cotización</button>
+                </div>
+            </div>
 
         <!-- Estadísticas -->
         <div class="cotizaciones-stats">
@@ -346,6 +369,7 @@
                 <button onclick="cerrarModalCotizacion()" class="btn-close">×</button>
             </div>
             <div class="modal-body">
+                <div id="form-cotizacion-errors" class="form-errors hidden"></div>
                 <form id="cotizacionForm">
                     <input type="hidden" id="cotizacionId">
                     
@@ -524,6 +548,9 @@
             </div>
         </div>
     </div>
+        </div>
+
+        </main>
     </div>
 
     <script src="/js/utils.js"></script>

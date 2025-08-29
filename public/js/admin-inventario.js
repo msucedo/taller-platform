@@ -5,6 +5,43 @@ let paginaActual = 1;
 let productosPorPagina = 10;
 let ordenActual = { campo: 'marca', direccion: 'asc' };
 
+// Navigation functions for admin tabs
+function irADashboard() {
+    window.location.href = '/admin/dashboard';
+}
+
+function irAEmpleados() {
+    // Navigate to employees tab in dashboard
+    window.location.href = '/admin/dashboard#empleados';
+}
+
+function irAReportes() {
+    // Navigate to reports tab in dashboard
+    window.location.href = '/admin/dashboard#reportes';
+}
+
+function irAConfiguracion() {
+    // Navigate to configuration tab in dashboard
+    window.location.href = '/admin/dashboard#configuracion';
+}
+
+function irACotizaciones() {
+    const token = localStorage.getItem('empleadoToken');
+    const empleadoData = JSON.parse(localStorage.getItem('empleadoData') || '{}');
+    
+    if (!token || empleadoData.rol !== 'admin') {
+        AppUtils.mostrarMensaje('No tiene permisos para acceder a cotizaciones', 'error');
+        return;
+    }
+    
+    window.location.href = '/cotizaciones';
+}
+
+function irAInventario() {
+    // Already on inventory page, just refresh or highlight
+    window.location.reload();
+}
+
 document.addEventListener('DOMContentLoaded', async function() {
     AppUtils.cargarVersion();
     setupEventListeners();
@@ -23,7 +60,10 @@ document.addEventListener('DOMContentLoaded', async function() {
     
     if (esDemo) {
         // Modo demo - cargar productos sin autenticación
-        document.getElementById('usuario-nombre').textContent = 'Demo Admin';
+        const welcomeElement = document.getElementById('welcomeMessage');
+        if (welcomeElement) {
+            welcomeElement.textContent = 'Demo Admin - Sistema de Administración de Llantas';
+        }
         cargarProductos();
     } else {
         // Modo normal - verificar autenticación
@@ -167,7 +207,10 @@ async function verificarAutenticacion() {
             return false;
         }
         
-        document.getElementById('usuario-nombre').textContent = data.user.nombre || 'Administrador';
+        const welcomeElement = document.getElementById('welcomeMessage');
+        if (welcomeElement) {
+            welcomeElement.textContent = `Bienvenido ${data.user.nombre || 'Admin'} - Sistema de Administración de Llantas`;
+        }
         return true;
     } catch (error) {
         console.error('Error verificando autenticación:', error);
@@ -631,7 +674,7 @@ async function guardarProducto(event) {
     console.log('Datos del formulario:', productoData);
     
     // Limpiar errores previos
-    limpiarErroresValidacion();
+    AppUtils.limpiarErroresForm('form-producto');
     
     // Validación del lado cliente
     const validationResult = validarProductoDetallado(productoData);
@@ -640,8 +683,7 @@ async function guardarProducto(event) {
     console.log('Resultado de validación:', validationResult);
     
     if (!validationResult.isValid) {
-        mostrarErroresValidacion(validationResult.errors);
-        AppUtils.mostrarMensaje(`Por favor corrige los errores marcados en rojo`, 'error');
+        AppUtils.mostrarErroresForm(validationResult.errors, 'form-producto');
         return;
     }
     
@@ -1881,8 +1923,7 @@ function generarCodigoBarras() {
 // ===== FUNCIONALIDADES MOVIMIENTOS DE INVENTARIO =====
 
 function mostrarMovimientos() {
-    cargarMovimientos();
-    document.getElementById('modal-movimientos').classList.remove('hidden');
+    window.location.href = '/admin/movimientos';
 }
 
 function mostrarFormularioMovimiento() {
@@ -2318,9 +2359,7 @@ function exportarInventarioFisico() {
 // ===== FUNCIONALIDADES RESERVAS DE STOCK =====
 
 function mostrarReservas() {
-    cargarReservas();
-    actualizarEstadisticasReservas();
-    document.getElementById('modal-reservas').classList.remove('hidden');
+    window.location.href = '/admin/reservas';
 }
 
 function mostrarFormularioReserva() {

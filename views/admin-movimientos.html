@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Movimientos de Inventario - Administrador</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <header class="admin-header">
+            <div class="header-content">
+                <div class="header-info">
+                    <h1>📊 Movimientos de Inventario</h1>
+                    <p id="welcomeMessage">Control de movimientos y estadísticas</p>
+                </div>
+                <div class="header-actions">
+                    <span class="user-badge admin">👑 Admin</span>
+                    <button onclick="cerrarSesion()" class="btn-logout">Cerrar Sesión</button>
+                </div>
+            </div>
+        </header>
+
+        <main class="admin-main">
+            <!-- Navegación por tabs -->
+            <div class="admin-tabs">
+                <button class="tab-btn" onclick="irADashboard()">📋 Solicitudes</button>
+                <button class="tab-btn" onclick="irAEmpleados()">👥 Empleados</button>
+                <button class="tab-btn" onclick="irAReportes()">📊 Reportes</button>
+                <button class="tab-btn" onclick="irAConfiguracion()">⚙️ Configuración</button>
+                <button class="tab-btn" onclick="irACotizaciones()">💰 Cotizaciones</button>
+                <button class="tab-btn" onclick="irAInventario()">📦 Inventario</button>
+            </div>
+
+            <!-- Dashboard de estadísticas -->
+            <div class="inventory-dashboard">
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-icon">📈</div>
+                        <div class="metric-info">
+                            <h3 id="total-entradas">0</h3>
+                            <p>Total Entradas</p>
+                        </div>
+                    </div>
+                    <div class="metric-card warning">
+                        <div class="metric-icon">📉</div>
+                        <div class="metric-info">
+                            <h3 id="total-salidas">0</h3>
+                            <p>Total Salidas</p>
+                        </div>
+                    </div>
+                    <div class="metric-card success">
+                        <div class="metric-icon">⚖️</div>
+                        <div class="metric-info">
+                            <h3 id="total-ajustes">0</h3>
+                            <p>Ajustes</p>
+                        </div>
+                    </div>
+                    <div class="metric-card info">
+                        <div class="metric-icon">📅</div>
+                        <div class="metric-info">
+                            <h3 id="movimientos-hoy">0</h3>
+                            <p>Movimientos Hoy</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Controles de la tabla -->
+            <div class="inventory-controls">
+                <div class="controls-left">
+                    <button onclick="mostrarFormularioMovimiento()" class="btn btn-success">
+                        ➕ Nuevo Movimiento
+                    </button>
+                    <button onclick="exportarMovimientos()" class="btn btn-secondary">
+                        📊 Exportar Excel
+                    </button>
+                </div>
+                <div class="controls-right">
+                    <div class="search-container">
+                        <input type="text" id="buscar-movimiento" placeholder="Buscar por producto o motivo..." class="search-input">
+                        <button onclick="limpiarBusqueda()" class="btn btn-secondary btn-sm">Limpiar</button>
+                    </div>
+                    <select id="filtro-tipo-movimiento" class="filter-select">
+                        <option value="">Todos los tipos</option>
+                        <option value="entrada">Entradas</option>
+                        <option value="salida">Salidas</option>
+                        <option value="ajuste">Ajustes</option>
+                        <option value="devolucion">Devoluciones</option>
+                    </select>
+                    <input type="date" id="fecha-desde" class="date-filter">
+                    <input type="date" id="fecha-hasta" class="date-filter">
+                </div>
+            </div>
+
+            <!-- Tabla de movimientos -->
+            <div class="inventory-container">
+                <div class="loading" id="loading-movimientos">
+                    <div class="spinner"></div>
+                    <p>Cargando movimientos...</p>
+                </div>
+                
+                <div id="tabla-movimientos-container" class="inventory-table-container" style="display: none;">
+                    <table class="inventory-table">
+                        <thead>
+                            <tr>
+                                <th class="sortable" onclick="ordenarPor('fecha')">Fecha</th>
+                                <th class="sortable" onclick="ordenarPor('producto')">Producto</th>
+                                <th class="sortable" onclick="ordenarPor('tipo')">Tipo</th>
+                                <th class="sortable" onclick="ordenarPor('cantidad')">Cantidad</th>
+                                <th>Motivo</th>
+                                <th>Usuario</th>
+                                <th class="sortable" onclick="ordenarPor('stock_anterior')">Stock Anterior</th>
+                                <th class="sortable" onclick="ordenarPor('stock_actual')">Stock Actual</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-movimientos-body">
+                            <!-- Los movimientos se cargarán aquí dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div id="no-movimientos" style="display: none;" class="empty-state">
+                    <div class="empty-icon">📊</div>
+                    <h3>No hay movimientos registrados</h3>
+                    <p>Los movimientos de inventario aparecerán aquí</p>
+                </div>
+            </div>
+
+            <!-- Paginación -->
+            <div id="paginacion" class="pagination-container" style="display: none;">
+                <div class="pagination-info">
+                    <span id="info-paginacion">Mostrando 1-10 de 50 movimientos</span>
+                </div>
+                <div class="pagination-controls">
+                    <button id="btn-anterior" class="btn btn-secondary btn-sm">← Anterior</button>
+                    <span id="paginas-numeros" class="page-numbers"></span>
+                    <button id="btn-siguiente" class="btn btn-secondary btn-sm">Siguiente →</button>
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <!-- Footer generado automáticamente -->
+        </footer>
+    </div>
+
+    <!-- Modal para Registro de Movimiento -->
+    <div id="modal-movimiento" class="modal hidden">
+        <div class="modal-content">
+            <h3 id="titulo-modal-movimiento">📝 Registrar Movimiento</h3>
+            <div id="form-movimiento-errors" class="form-errors hidden"></div>
+            <form id="form-movimiento">
+                <div class="form-group">
+                    <label for="movimiento-producto">Producto*</label>
+                    <select id="movimiento-producto" name="producto_id" required>
+                        <option value="">Seleccionar producto</option>
+                        <!-- Se llenarán dinámicamente -->
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="movimiento-tipo">Tipo de Movimiento*</label>
+                    <select id="movimiento-tipo" name="tipo" required onchange="actualizarTipoMovimiento()">
+                        <option value="">Seleccionar tipo</option>
+                        <option value="entrada">📈 Entrada - Aumentar stock</option>
+                        <option value="salida">📉 Salida - Reducir stock</option>
+                        <option value="ajuste">⚖️ Ajuste - Corrección</option>
+                        <option value="devolucion">🔄 Devolución</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="movimiento-cantidad">Cantidad*</label>
+                    <input type="number" id="movimiento-cantidad" name="cantidad" 
+                           required min="1" placeholder="Ej: 5">
+                    <small id="stock-actual-info">Stock actual: -</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="movimiento-motivo">Motivo*</label>
+                    <select id="movimiento-motivo" name="motivo" required>
+                        <option value="">Seleccionar motivo</option>
+                        <!-- Se llenarán según el tipo -->
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="movimiento-observaciones">Observaciones</label>
+                    <textarea id="movimiento-observaciones" name="observaciones" rows="3"
+                              placeholder="Detalles adicionales del movimiento..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="movimiento-documento">Documento de Referencia</label>
+                    <input type="text" id="movimiento-documento" name="documento_referencia" 
+                           placeholder="Ej: Factura #001, Orden #123">
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-success">💾 Registrar Movimiento</button>
+                    <button type="button" onclick="cerrarModal('modal-movimiento')" class="btn btn-secondary">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="message" class="message hidden"></div>
+
+    <script src="/js/utils.js"></script>
+    <script src="/js/admin-movimientos.js"></script>
+    <script>
+        // Inicializar footer unificado
+        document.addEventListener('DOMContentLoaded', function() {
+            renderFooter({ type: 'dashboard' });
+        });
+    </script>
+</body>
+</html>

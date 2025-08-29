@@ -8,25 +8,29 @@
 </head>
 <body>
     <div class="container">
-        <header>
-            <h1>📦 Gestión de Inventario</h1>
-            <p>Sistema de Administración de Llantas</p>
-            <div class="user-info">
-                <span id="usuario-nombre">Administrador</span>
-                <button onclick="logout()" class="btn btn-secondary btn-sm">Cerrar Sesión</button>
+        <header class="admin-header">
+            <div class="header-content">
+                <div class="header-info">
+                    <h1>📦 Gestión de Inventario</h1>
+                    <p id="welcomeMessage">Sistema de Administración de Llantas</p>
+                </div>
+                <div class="header-actions">
+                    <span class="user-badge admin">👑 Admin</span>
+                    <button onclick="logout()" class="btn-logout">Cerrar Sesión</button>
+                </div>
             </div>
         </header>
 
-        <nav class="admin-nav">
-            <a href="/admin/dashboard" class="nav-link">📊 Dashboard Principal</a>
-            <a href="/admin/inventario" class="nav-link active">📦 Inventario</a>
-            <a href="#" onclick="mostrarMovimientos()" class="nav-link">📊 Movimientos</a>
-            <a href="#" onclick="mostrarInventarioFisico()" class="nav-link">📋 Inventario Físico</a>
-            <a href="#" onclick="mostrarReservas()" class="nav-link">🔒 Reservas</a>
-            <a href="/dashboard" class="nav-link">📋 Solicitudes</a>
-        </nav>
-
-        <main>
+        <main class="admin-main">
+            <!-- Navegación por tabs -->
+            <div class="admin-tabs">
+                <button class="tab-btn" onclick="irADashboard()">📋 Solicitudes</button>
+                <button class="tab-btn" onclick="irAEmpleados()">👥 Empleados</button>
+                <button class="tab-btn" onclick="irAReportes()">📊 Reportes</button>
+                <button class="tab-btn" onclick="irAConfiguracion()">⚙️ Configuración</button>
+                <button class="tab-btn" onclick="irACotizaciones()">💰 Cotizaciones</button>
+                <button class="tab-btn active" onclick="irAInventario()">📦 Inventario</button>
+            </div>
             <!-- Dashboard de métricas -->
             <div class="inventory-dashboard">
                 <div class="metrics-grid">
@@ -73,6 +77,12 @@
                     <button onclick="exportarInventario()" class="btn btn-secondary">
                         📊 Exportar Excel
                     </button>
+                    <a href="/admin/movimientos" class="btn btn-primary">
+                        📊 Ver Movimientos
+                    </a>
+                    <a href="/admin/reservas" class="btn btn-warning">
+                        🔒 Ver Reservas
+                    </a>
                 </div>
                 <div class="controls-right">
                     <div class="view-toggle">
@@ -148,6 +158,8 @@
                     <button id="btn-siguiente" class="btn btn-secondary btn-sm">Siguiente →</button>
                 </div>
             </div>
+            </div>
+
         </main>
 
         <footer>
@@ -159,6 +171,7 @@
     <div id="modal-producto" class="modal hidden">
         <div class="modal-content large">
             <h3 id="titulo-modal">Nuevo Producto</h3>
+            <div id="form-producto-errors" class="form-errors hidden"></div>
             <form id="form-producto">
                 <input type="hidden" id="producto-id">
                 
@@ -514,6 +527,7 @@
     <div id="modal-movimiento" class="modal hidden">
         <div class="modal-content">
             <h3 id="titulo-modal-movimiento">📝 Registrar Movimiento</h3>
+            <div id="form-movimiento-errors" class="form-errors hidden"></div>
             <form id="form-movimiento">
                 <div class="form-group">
                     <label for="movimiento-producto">Producto*</label>
@@ -710,6 +724,7 @@
     <div id="modal-nueva-reserva" class="modal hidden">
         <div class="modal-content">
             <h3>🔒 Nueva Reserva de Stock</h3>
+            <div id="form-reserva-errors" class="form-errors hidden"></div>
             <form id="form-reserva">
                 <div class="form-group">
                     <label for="reserva-producto">Producto*</label>

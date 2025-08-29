@@ -3,6 +3,49 @@ let cotizacionesFiltradas = [];
 let currentCotizacion = null;
 let itemCounter = 0;
 
+// Navigation functions for admin tabs
+function irADashboard() {
+    window.location.href = '/admin/dashboard';
+}
+
+function irAEmpleados() {
+    // Navigate to employees tab in dashboard
+    window.location.href = '/admin/dashboard#empleados';
+}
+
+function irAReportes() {
+    // Navigate to reports tab in dashboard
+    window.location.href = '/admin/dashboard#reportes';
+}
+
+function irAConfiguracion() {
+    // Navigate to configuration tab in dashboard
+    window.location.href = '/admin/dashboard#configuracion';
+}
+
+function irACotizaciones() {
+    // Already on quotations page, just refresh or highlight
+    window.location.reload();
+}
+
+function irAInventario() {
+    const token = localStorage.getItem('empleadoToken');
+    const empleadoData = JSON.parse(localStorage.getItem('empleadoData') || '{}');
+    
+    if (!token || empleadoData.rol !== 'admin') {
+        AppUtils.mostrarMensaje('No tiene permisos para acceder al inventario', 'error');
+        return;
+    }
+    
+    window.location.href = '/admin/inventario';
+}
+
+function cerrarSesion() {
+    localStorage.removeItem('empleadoToken');
+    localStorage.removeItem('empleadoData');
+    window.location.href = '/empleado/login';
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     AppUtils.cargarVersion();
     verificarAutenticacion();

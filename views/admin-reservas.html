@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reservas de Stock - Administrador</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <header class="admin-header">
+            <div class="header-content">
+                <div class="header-info">
+                    <h1>🔒 Reservas de Stock</h1>
+                    <p id="welcomeMessage">Gestión de reservas y productos reservados</p>
+                </div>
+                <div class="header-actions">
+                    <span class="user-badge admin">👑 Admin</span>
+                    <button onclick="cerrarSesion()" class="btn-logout">Cerrar Sesión</button>
+                </div>
+            </div>
+        </header>
+
+        <main class="admin-main">
+            <!-- Navegación por tabs -->
+            <div class="admin-tabs">
+                <button class="tab-btn" onclick="irADashboard()">📋 Solicitudes</button>
+                <button class="tab-btn" onclick="irAEmpleados()">👥 Empleados</button>
+                <button class="tab-btn" onclick="irAReportes()">📊 Reportes</button>
+                <button class="tab-btn" onclick="irAConfiguracion()">⚙️ Configuración</button>
+                <button class="tab-btn" onclick="irACotizaciones()">💰 Cotizaciones</button>
+                <button class="tab-btn" onclick="irAInventario()">📦 Inventario</button>
+            </div>
+
+            <!-- Dashboard de estadísticas -->
+            <div class="inventory-dashboard">
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-icon">🔒</div>
+                        <div class="metric-info">
+                            <h3 id="total-reservas">0</h3>
+                            <p>Total Reservas</p>
+                        </div>
+                    </div>
+                    <div class="metric-card warning">
+                        <div class="metric-icon">⏰</div>
+                        <div class="metric-info">
+                            <h3 id="reservas-vencidas">0</h3>
+                            <p>Vencidas</p>
+                        </div>
+                    </div>
+                    <div class="metric-card success">
+                        <div class="metric-icon">✅</div>
+                        <div class="metric-info">
+                            <h3 id="reservas-activas">0</h3>
+                            <p>Activas</p>
+                        </div>
+                    </div>
+                    <div class="metric-card info">
+                        <div class="metric-icon">📦</div>
+                        <div class="metric-info">
+                            <h3 id="productos-reservados">0</h3>
+                            <p>Productos Reservados</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Controles de la tabla -->
+            <div class="inventory-controls">
+                <div class="controls-left">
+                    <button onclick="mostrarFormularioReserva()" class="btn btn-success">
+                        ➕ Nueva Reserva
+                    </button>
+                    <button onclick="exportarReservas()" class="btn btn-secondary">
+                        📊 Exportar Excel
+                    </button>
+                </div>
+                <div class="controls-right">
+                    <div class="search-container">
+                        <input type="text" id="buscar-reserva" placeholder="Buscar por cliente o producto..." class="search-input">
+                        <button onclick="limpiarBusqueda()" class="btn btn-secondary btn-sm">Limpiar</button>
+                    </div>
+                    <select id="filtro-estado-reserva" class="filter-select">
+                        <option value="">Todos los estados</option>
+                        <option value="activa">Activas</option>
+                        <option value="parcial">Parcialmente usadas</option>
+                        <option value="completada">Completadas</option>
+                        <option value="vencida">Vencidas</option>
+                        <option value="cancelada">Canceladas</option>
+                    </select>
+                    <input type="date" id="fecha-vencimiento-filtro" class="date-filter" placeholder="Fecha límite">
+                </div>
+            </div>
+
+            <!-- Tabla de reservas -->
+            <div class="inventory-container">
+                <div class="loading" id="loading-reservas">
+                    <div class="spinner"></div>
+                    <p>Cargando reservas...</p>
+                </div>
+                
+                <div id="tabla-reservas-container" class="inventory-table-container" style="display: none;">
+                    <table class="inventory-table">
+                        <thead>
+                            <tr>
+                                <th class="sortable" onclick="ordenarPor('id')">ID Reserva</th>
+                                <th class="sortable" onclick="ordenarPor('producto')">Producto</th>
+                                <th class="sortable" onclick="ordenarPor('cliente')">Cliente/Cotización</th>
+                                <th class="sortable" onclick="ordenarPor('cantidad')">Cantidad</th>
+                                <th>Usado</th>
+                                <th>Disponible</th>
+                                <th class="sortable" onclick="ordenarPor('fecha_limite')">Fecha Límite</th>
+                                <th class="sortable" onclick="ordenarPor('estado')">Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-reservas-body">
+                            <!-- Las reservas se cargarán aquí dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div id="no-reservas" style="display: none;" class="empty-state">
+                    <div class="empty-icon">🔒</div>
+                    <h3>No hay reservas registradas</h3>
+                    <p>Las reservas de stock aparecerán aquí</p>
+                    <button onclick="mostrarFormularioReserva()" class="btn btn-primary">
+                        ➕ Crear Primera Reserva
+                    </button>
+                </div>
+            </div>
+
+            <!-- Paginación -->
+            <div id="paginacion" class="pagination-container" style="display: none;">
+                <div class="pagination-info">
+                    <span id="info-paginacion">Mostrando 1-10 de 50 reservas</span>
+                </div>
+                <div class="pagination-controls">
+                    <button id="btn-anterior" class="btn btn-secondary btn-sm">← Anterior</button>
+                    <span id="paginas-numeros" class="page-numbers"></span>
+                    <button id="btn-siguiente" class="btn btn-secondary btn-sm">Siguiente →</button>
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <!-- Footer generado automáticamente -->
+        </footer>
+    </div>
+
+    <!-- Modal para Nueva Reserva -->
+    <div id="modal-nueva-reserva" class="modal hidden">
+        <div class="modal-content">
+            <h3>🔒 Nueva Reserva de Stock</h3>
+            <div id="form-reserva-errors" class="form-errors hidden"></div>
+            <form id="form-reserva">
+                <div class="form-group">
+                    <label for="reserva-producto">Producto*</label>
+                    <select id="reserva-producto" name="producto_id" required>
+                        <option value="">Seleccionar producto</option>
+                        <!-- Se llenarán dinámicamente -->
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="reserva-cantidad">Cantidad a Reservar*</label>
+                    <input type="number" id="reserva-cantidad" name="cantidad" 
+                           required min="1" placeholder="Ej: 4">
+                    <small id="stock-disponible-info">Stock disponible: -</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="reserva-cliente">Cliente/Empresa</label>
+                    <input type="text" id="reserva-cliente" name="cliente" 
+                           placeholder="Nombre del cliente o empresa">
+                </div>
+
+                <div class="form-group">
+                    <label for="reserva-cotizacion">ID Cotización</label>
+                    <input type="text" id="reserva-cotizacion" name="cotizacion_id" 
+                           placeholder="Ej: COT-2024-001">
+                </div>
+
+                <div class="form-group">
+                    <label for="reserva-fecha-limite">Fecha Límite*</label>
+                    <input type="date" id="reserva-fecha-limite" name="fecha_limite" required>
+                    <small>Fecha hasta la cual la reserva estará activa</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="reserva-observaciones">Observaciones</label>
+                    <textarea id="reserva-observaciones" name="observaciones" rows="3"
+                              placeholder="Detalles de la reserva..."></textarea>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-success">🔒 Crear Reserva</button>
+                    <button type="button" onclick="cerrarModal('modal-nueva-reserva')" class="btn btn-secondary">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal para Gestionar Reserva -->
+    <div id="modal-gestionar-reserva" class="modal hidden">
+        <div class="modal-content">
+            <h3 id="titulo-gestionar-reserva">🔒 Gestionar Reserva</h3>
+            
+            <div class="reserva-detalle">
+                <div class="detalle-grid">
+                    <div class="detalle-item">
+                        <strong>Producto:</strong>
+                        <span id="detalle-producto">-</span>
+                    </div>
+                    <div class="detalle-item">
+                        <strong>Cliente:</strong>
+                        <span id="detalle-cliente">-</span>
+                    </div>
+                    <div class="detalle-item">
+                        <strong>Cantidad Reservada:</strong>
+                        <span id="detalle-cantidad-reservada">-</span>
+                    </div>
+                    <div class="detalle-item">
+                        <strong>Cantidad Usada:</strong>
+                        <span id="detalle-cantidad-usada">-</span>
+                    </div>
+                    <div class="detalle-item">
+                        <strong>Cantidad Disponible:</strong>
+                        <span id="detalle-cantidad-disponible">-</span>
+                    </div>
+                    <div class="detalle-item">
+                        <strong>Fecha Límite:</strong>
+                        <span id="detalle-fecha-limite">-</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="reserva-acciones">
+                <h4>Acciones Disponibles</h4>
+                
+                <div class="accion-grupo">
+                    <h5>Usar Stock Reservado</h5>
+                    <div class="form-group">
+                        <input type="number" id="cantidad-usar" placeholder="Cantidad a usar" min="1">
+                        <button onclick="usarStockReservado()" class="btn btn-primary btn-sm">
+                            ✅ Usar Stock
+                        </button>
+                    </div>
+                </div>
+
+                <div class="accion-grupo">
+                    <h5>Modificar Reserva</h5>
+                    <div class="form-group">
+                        <input type="date" id="nueva-fecha-limite" placeholder="Nueva fecha límite">
+                        <button onclick="modificarFechaLimite()" class="btn btn-warning btn-sm">
+                            📅 Modificar Fecha
+                        </button>
+                    </div>
+                </div>
+
+                <div class="accion-grupo">
+                    <h5>Finalizar Reserva</h5>
+                    <button onclick="liberarReserva()" class="btn btn-info">
+                        🔓 Liberar Stock
+                    </button>
+                    <button onclick="cancelarReserva()" class="btn btn-danger">
+                        ❌ Cancelar Reserva
+                    </button>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button onclick="cerrarModal('modal-gestionar-reserva')" class="btn btn-secondary">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="message" class="message hidden"></div>
+
+    <script src="/js/utils.js"></script>
+    <script src="/js/admin-reservas.js"></script>
+    <script>
+        // Inicializar footer unificado
+        document.addEventListener('DOMContentLoaded', function() {
+            renderFooter({ type: 'dashboard' });
+        });
+    </script>
+</body>
+</html>

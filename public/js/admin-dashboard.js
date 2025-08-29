@@ -46,7 +46,17 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     loadSolicitudes();
+    
+    // Handle hash navigation for direct links
+    handleHashNavigation();
 });
+
+function handleHashNavigation() {
+    const hash = window.location.hash.substring(1); // Remove the #
+    if (hash && ['empleados', 'reportes', 'configuracion'].includes(hash)) {
+        showTab(hash);
+    }
+}
 
 function verificarAutenticacion() {
     const token = localStorage.getItem('empleadoToken');

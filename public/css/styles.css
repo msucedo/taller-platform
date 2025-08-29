@@ -313,6 +313,36 @@ main {
     border: 1px solid #bee5eb;
 }
 
+/* Form errors - positioned at top of forms */
+.form-errors {
+    padding: 12px 15px;
+    margin-bottom: 20px;
+    border-radius: 6px;
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+.form-errors ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.form-errors li {
+    margin-bottom: 5px;
+}
+
+.form-errors li:last-child {
+    margin-bottom: 0;
+}
+
+.form-errors.hidden {
+    display: none;
+}
+
 .hidden {
     display: none;
 }

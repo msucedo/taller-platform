@@ -182,6 +182,37 @@ window.AppUtils = {
         }, tipo === 'error' ? 5000 : 3000);
     },
 
+    // Función para mostrar errores de validación en formularios
+    mostrarErroresForm(errores, formId) {
+        const errorContainer = document.getElementById(`${formId}-errors`);
+        if (!errorContainer) return;
+        
+        if (!errores || errores.length === 0) {
+            errorContainer.classList.add('hidden');
+            return;
+        }
+        
+        // Si es un string, convertir a array
+        if (typeof errores === 'string') {
+            errores = [errores];
+        }
+        
+        errorContainer.innerHTML = `<ul>${errores.map(error => `<li>${error}</li>`).join('')}</ul>`;
+        errorContainer.classList.remove('hidden');
+        
+        // Scroll al top del form para mostrar errores
+        errorContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    },
+
+    // Función para limpiar errores de formulario
+    limpiarErroresForm(formId) {
+        const errorContainer = document.getElementById(`${formId}-errors`);
+        if (errorContainer) {
+            errorContainer.classList.add('hidden');
+            errorContainer.innerHTML = '';
+        }
+    },
+
     // Confirmar acción
     confirmar(mensaje) {
         return confirm(mensaje);
