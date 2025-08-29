@@ -43,9 +43,11 @@
     "jsonwebtoken": "^9.0.2",
     "multer": "^2.0.2",
     "node-fetch": "^2.7.0",
+    "nodemailer": "^7.0.5",
     "sqlite3": "^5.1.6",
     "web-streams-polyfill": "^4.2.0",
-    "whatwg-fetch": "^3.6.20"
+    "whatwg-fetch": "^3.6.20",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "nodemon": "^3.0.1",

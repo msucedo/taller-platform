@@ -134,8 +134,12 @@ sqlite3 database/taller.db "UPDATE usuarios SET activo = 1"
 ```
 
 ## Notas, mejoras
-- arreglar las imagenes parpadeantes, es molesto
 - en el inventario, despues de actualizar la tabla porque se edito un item por ejemplo, se debe limpiar el buscador
+- en el inventario, el boton "cerrar sesion", no lo pongas en el header
+- en el portal proveedor, tambien deberia ser posible acceder con un correo de una cotizacion y no solo de una solicitud
+- el dashboard de administrador tiene el tipo de header que quiero lleven todas las pantallas del administrador, es decir, la sección inventario deberia tener este mismo header y la seccion cotizaciones tambien
+- en la sección de inventario, la tab de movimientos y de reservas deberian de ser su propia pagina y no solo un modal, y con estadisticas reales asi como la pagina de inventario
+- mover el mensaje de error de las validaciones a la parte de arriba porque simepre salen hasta abajo y a veces no se ven
     
 
 

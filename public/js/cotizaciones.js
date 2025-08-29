@@ -212,14 +212,20 @@ function agregarItem(itemData = null) {
     const itemHtml = `
         <div class="item-row" id="${itemId}">
             <div>
-                <input type="text" class="item-nombre" placeholder="Nombre del producto/servicio" 
-                       value="${itemData?.nombre || ''}" onchange="calcularTotales()" required>
+                <div style="display: flex; gap: 5px; margin-bottom: 5px;">
+                    <input type="text" class="item-nombre" placeholder="Nombre del producto/servicio" 
+                           value="${itemData?.nombre || ''}" onchange="calcularTotales()" required style="flex: 1;">
+                    <button type="button" onclick="seleccionarProducto('${itemId}')" class="btn btn-secondary btn-sm" 
+                            style="padding: 4px 8px; font-size: 0.8rem;">📦 Inventario</button>
+                </div>
                 <input type="text" class="item-descripcion" placeholder="Descripción detallada" 
                        value="${itemData?.descripcion || ''}" style="margin-top: 5px;">
+                <input type="hidden" class="item-producto-id" value="${itemData?.producto_id || ''}">
             </div>
             <div>
                 <input type="number" class="item-cantidad" min="1" step="1" 
                        value="${itemData?.cantidad || 1}" onchange="calcularTotales()" required>
+                <small class="stock-disponible" style="display: block; color: #666; font-size: 0.7rem;"></small>
             </div>
             <div>
                 <input type="number" class="item-precio" min="0" step="0.01" 
@@ -1385,6 +1391,163 @@ function cotizarLlanta(llantaId) {
 function verDetalles(llantaId) {
     // Mostrar modal con detalles de la llanta
     AppUtils.mostrarMensaje('Funcionalidad de detalles próximamente', 'info');
+}
+
+// ===== FUNCIONES PARA SELECCIÓN DE PRODUCTOS DEL INVENTARIO =====
+
+async function seleccionarProducto(itemId) {
+    try {
+        const token = localStorage.getItem('empleadoToken');
+        const response = await fetch('/api/inventario/productos', {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        if (response.ok) {
+            const productos = await response.json();
+            mostrarModalSeleccionProducto(itemId, productos);
+        } else {
+            AppUtils.mostrarMensaje('Error al cargar productos del inventario', 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        AppUtils.mostrarMensaje('Error de conexión al cargar inventario', 'error');
+    }
+}
+
+function mostrarModalSeleccionProducto(itemId, productos) {
+    const modalHtml = `
+        <div id="modalSeleccionProducto" class="modal-cotizacion" style="display: flex;">
+            <div class="modal-content-cotizacion" style="max-width: 900px;">
+                <div class="modal-header">
+                    <h3>📦 Seleccionar Producto del Inventario</h3>
+                    <button onclick="cerrarModalSeleccionProducto()" class="btn-close">×</button>
+                </div>
+                <div class="modal-body">
+                    <div style="margin-bottom: 20px;">
+                        <input type="text" id="buscarProductoInventario" placeholder="Buscar por marca, modelo o medida..." 
+                               style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;"
+                               oninput="filtrarProductosInventario()">
+                    </div>
+                    <div style="max-height: 400px; overflow-y: auto;">
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr style="background: #f8f9fa;">
+                                    <th style="padding: 10px; text-align: left; border-bottom: 2px solid #dee2e6;">Producto</th>
+                                    <th style="padding: 10px; text-align: center; border-bottom: 2px solid #dee2e6;">Medida</th>
+                                    <th style="padding: 10px; text-align: center; border-bottom: 2px solid #dee2e6;">Stock</th>
+                                    <th style="padding: 10px; text-align: right; border-bottom: 2px solid #dee2e6;">Precio</th>
+                                    <th style="padding: 10px; text-align: center; border-bottom: 2px solid #dee2e6;">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tablaProductosInventario">
+                                ${productos.map(producto => `
+                                    <tr class="producto-row" data-id="${producto.id}" 
+                                        data-nombre="${producto.marca} ${producto.modelo}"
+                                        data-descripcion="${producto.descripcion || ''}"
+                                        data-precio="${producto.precio_venta}"
+                                        data-stock="${producto.stock_actual}"
+                                        data-medida="${producto.medida}"
+                                        style="border-bottom: 1px solid #eee; cursor: pointer;">
+                                        <td style="padding: 10px;">
+                                            <strong>${producto.marca} ${producto.modelo}</strong>
+                                            ${producto.descripcion ? `<br><small style="color: #666;">${producto.descripcion}</small>` : ''}
+                                        </td>
+                                        <td style="padding: 10px; text-align: center;">${producto.medida}</td>
+                                        <td style="padding: 10px; text-align: center;">
+                                            <span class="${producto.stock_actual <= producto.stock_minimo ? 'text-danger' : ''}">${producto.stock_actual}</span>
+                                        </td>
+                                        <td style="padding: 10px; text-align: right;">$${AppUtils.formatMoney(producto.precio_venta)}</td>
+                                        <td style="padding: 10px; text-align: center;">
+                                            <button onclick="seleccionarProductoInventario('${itemId}', ${producto.id})" 
+                                                    class="btn btn-primary btn-sm"
+                                                    ${producto.stock_actual <= 0 ? 'disabled' : ''}>
+                                                ${producto.stock_actual <= 0 ? 'Sin Stock' : 'Seleccionar'}
+                                            </button>
+                                        </td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="form-actions" style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee; text-align: center;">
+                    <button onclick="cerrarModalSeleccionProducto()" class="btn btn-secondary">Cancelar</button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+}
+
+function filtrarProductosInventario() {
+    const filtro = document.getElementById('buscarProductoInventario').value.toLowerCase();
+    const filas = document.querySelectorAll('#tablaProductosInventario .producto-row');
+    
+    filas.forEach(fila => {
+        const nombre = fila.dataset.nombre.toLowerCase();
+        const medida = fila.dataset.medida.toLowerCase();
+        const mostrar = nombre.includes(filtro) || medida.includes(filtro);
+        fila.style.display = mostrar ? '' : 'none';
+    });
+}
+
+async function seleccionarProductoInventario(itemId, productoId) {
+    try {
+        const token = localStorage.getItem('empleadoToken');
+        const response = await fetch(`/api/inventario/productos`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        if (response.ok) {
+            const productos = await response.json();
+            const producto = productos.find(p => p.id == productoId);
+            
+            if (producto) {
+                // Llenar campos del item con datos del producto
+                const itemElement = document.getElementById(itemId);
+                itemElement.querySelector('.item-nombre').value = `${producto.marca} ${producto.modelo}`;
+                itemElement.querySelector('.item-descripcion').value = producto.descripcion || `Llanta ${producto.medida}`;
+                itemElement.querySelector('.item-precio').value = producto.precio_venta;
+                itemElement.querySelector('.item-producto-id').value = producto.id;
+                
+                // Mostrar stock disponible
+                const stockElement = itemElement.querySelector('.stock-disponible');
+                stockElement.textContent = `Stock disponible: ${producto.stock_actual}`;
+                stockElement.style.color = producto.stock_actual <= producto.stock_minimo ? '#dc3545' : '#666';
+                
+                // Validar cantidad
+                const cantidadInput = itemElement.querySelector('.item-cantidad');
+                cantidadInput.max = producto.stock_actual;
+                cantidadInput.addEventListener('input', function() {
+                    if (parseInt(this.value) > producto.stock_actual) {
+                        this.value = producto.stock_actual;
+                        AppUtils.mostrarMensaje(`Solo hay ${producto.stock_actual} unidades disponibles`, 'warning');
+                    }
+                });
+                
+                calcularTotales();
+                cerrarModalSeleccionProducto();
+                AppUtils.mostrarMensaje('Producto seleccionado del inventario', 'success');
+            }
+        } else {
+            AppUtils.mostrarMensaje('Error al obtener detalles del producto', 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        AppUtils.mostrarMensaje('Error de conexión', 'error');
+    }
+}
+
+function cerrarModalSeleccionProducto() {
+    const modal = document.getElementById('modalSeleccionProducto');
+    if (modal) {
+        modal.remove();
+    }
 }
 
 

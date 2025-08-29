@@ -27,10 +27,32 @@ const rateLimit = require('express-rate-limit');
 const { body, validationResult, param } = require('express-validator');
 const { OAuth2Client } = require('google-auth-library');
 const jwt = require('jsonwebtoken');
+const nodemailer = require('nodemailer');
+const XLSX = require('xlsx');
 const { initDatabase, dbPath, generateTrackerCode, generateSessionToken, hashPassword, comparePassword } = require('./database/init');
 
 // Configuración de Google OAuth
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
+// Configuración de Email
+let transporter = null;
+try {
+    if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+        transporter = nodemailer.createTransport({
+            host: process.env.EMAIL_HOST || 'smtp.gmail.com',
+            port: process.env.EMAIL_PORT || 587,
+            secure: false,
+            auth: {
+                user: process.env.EMAIL_USER,
+                pass: process.env.EMAIL_PASS
+            }
+        });
+    } else {
+        console.info('Email credentials not configured - email features will be simulated');
+    }
+} catch (error) {
+    console.warn('Email configuration not available:', error.message);
+}
 
 const app = express();
 
@@ -1911,6 +1933,153 @@ app.delete('/api/inventario/eliminar-imagen/:filename', requireAuth, requireAdmi
     });
 });
 
+// API para exportar inventario a Excel
+app.get('/api/inventario/exportar-excel', requireAuth, requireAdmin, (req, res) => {
+    const db = new sqlite3.Database(dbPath);
+    
+    db.all(`
+        SELECT 
+            id,
+            marca,
+            modelo,
+            medida,
+            precio_compra,
+            precio_venta,
+            stock_actual,
+            stock_minimo,
+            ubicacion_almacen,
+            proveedor,
+            codigo_barras,
+            descripcion,
+            caracteristicas,
+            fecha_creacion,
+            fecha_actualizacion,
+            activo,
+            CASE 
+                WHEN stock_actual <= 0 THEN 'Agotado'
+                WHEN stock_actual <= stock_minimo THEN 'Stock Bajo'
+                ELSE 'Disponible'
+            END as estado_stock,
+            CASE 
+                WHEN precio_compra IS NOT NULL THEN (precio_venta - precio_compra)
+                ELSE 0
+            END as margen,
+            (stock_actual * precio_venta) as valor_inventario
+        FROM productos_llantas 
+        WHERE activo = 1 
+        ORDER BY marca, modelo, medida
+    `, (err, productos) => {
+        if (err) {
+            console.error('Error al obtener productos para exportar:', err);
+            db.close();
+            return res.status(500).json({ error: 'Error interno del servidor' });
+        }
+        
+        try {
+            // Crear workbook
+            const workbook = XLSX.utils.book_new();
+            
+            // Formatear datos para Excel
+            const dataForExcel = productos.map(producto => ({
+                'ID': producto.id,
+                'Marca': producto.marca,
+                'Modelo': producto.modelo,
+                'Medida': producto.medida,
+                'Precio Compra': producto.precio_compra || 0,
+                'Precio Venta': producto.precio_venta,
+                'Stock Actual': producto.stock_actual,
+                'Stock Mínimo': producto.stock_minimo,
+                'Estado Stock': producto.estado_stock,
+                'Ubicación': producto.ubicacion_almacen || 'No definida',
+                'Proveedor': producto.proveedor || 'No especificado',
+                'Código Barras': producto.codigo_barras || 'No asignado',
+                'Descripción': producto.descripcion || '',
+                'Características': producto.caracteristicas || '',
+                'Fecha Creación': new Date(producto.fecha_creacion).toLocaleDateString('es-ES'),
+                'Margen': producto.margen || 0,
+                'Valor en Inventario': producto.valor_inventario || 0
+            }));
+            
+            // Crear hoja de trabajo
+            const worksheet = XLSX.utils.json_to_sheet(dataForExcel);
+            
+            // Configurar anchos de columna
+            const colWidths = [
+                {wch: 8},   // ID
+                {wch: 15},  // Marca
+                {wch: 20},  // Modelo
+                {wch: 12},  // Medida
+                {wch: 12},  // Precio Compra
+                {wch: 12},  // Precio Venta
+                {wch: 10},  // Stock Actual
+                {wch: 10},  // Stock Mínimo
+                {wch: 12},  // Estado Stock
+                {wch: 15},  // Ubicación
+                {wch: 20},  // Proveedor
+                {wch: 15},  // Código Barras
+                {wch: 30},  // Descripción
+                {wch: 25},  // Características
+                {wch: 12},  // Fecha Creación
+                {wch: 12},  // Margen
+                {wch: 15}   // Valor Inventario
+            ];
+            worksheet['!cols'] = colWidths;
+            
+            // Agregar hoja al workbook
+            XLSX.utils.book_append_sheet(workbook, worksheet, 'Inventario');
+            
+            // Crear hoja de resumen
+            const totalProductos = productos.length;
+            const stockBajo = productos.filter(p => p.stock_actual <= p.stock_minimo).length;
+            const agotados = productos.filter(p => p.stock_actual <= 0).length;
+            const valorTotal = productos.reduce((sum, p) => sum + (p.valor_inventario || 0), 0);
+            const margenPromedio = productos.reduce((sum, p) => sum + (p.margen || 0), 0) / totalProductos;
+            
+            const resumenData = [
+                ['RESUMEN DEL INVENTARIO', ''],
+                ['Total de Productos:', totalProductos],
+                ['Productos con Stock Bajo:', stockBajo],
+                ['Productos Agotados:', agotados],
+                ['Valor Total del Inventario:', valorTotal],
+                ['Margen Promedio:', margenPromedio.toFixed(2)],
+                ['', ''],
+                ['Exportado el:', new Date().toLocaleString('es-ES')],
+                ['Generado por:', 'Sistema de Inventario - Llantera & Servicios']
+            ];
+            
+            const resumenWorksheet = XLSX.utils.aoa_to_sheet(resumenData);
+            resumenWorksheet['!cols'] = [{wch: 25}, {wch: 20}];
+            XLSX.utils.book_append_sheet(workbook, resumenWorksheet, 'Resumen');
+            
+            // Generar buffer del archivo Excel
+            const excelBuffer = XLSX.write(workbook, { 
+                type: 'buffer', 
+                bookType: 'xlsx',
+                compression: true
+            });
+            
+            // Configurar headers para descarga
+            const fechaHoy = new Date().toISOString().split('T')[0];
+            const filename = `inventario-${fechaHoy}.xlsx`;
+            
+            res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+            res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            res.setHeader('Content-Length', excelBuffer.length);
+            
+            // Enviar archivo
+            res.send(excelBuffer);
+            
+            console.log(`Inventario exportado a Excel: ${filename}, ${totalProductos} productos`);
+            
+        } catch (error) {
+            console.error('Error al generar archivo Excel:', error);
+            res.status(500).json({ error: 'Error al generar archivo Excel' });
+        } finally {
+            db.close();
+        }
+    });
+});
+
 // ====== API COTIZACIONES ======
 
 // Generar número de cotización
@@ -2439,11 +2608,45 @@ app.post('/api/cotizaciones/:id/enviar', requireAuth, (req, res) => {
             
             cotizacion.items = items;
             
-            // Simular envío de email (en producción usarías nodemailer)
-            const emailContent = generarEmailCotizacion(cotizacion);
+            // Enviar email con nodemailer
+            const { subject, html, text } = generarEmailCotizacion(cotizacion);
+            
+            // Función para enviar email
+            const enviarEmail = async (cotizacion, subject, html, text) => {
+                if (!transporter || !process.env.EMAIL_USER) {
+                    console.warn('Configuración de email no disponible. Email simulado para:', cotizacion.cliente_email);
+                    return { success: true, simulated: true };
+                }
+                
+                try {
+                    const mailOptions = {
+                        from: `"${process.env.EMPRESA_NOMBRE || 'Llantera & Servicios'}" <${process.env.EMAIL_USER}>`,
+                        to: cotizacion.cliente_email,
+                        subject: subject,
+                        text: text,
+                        html: html
+                    };
+                    
+                    const result = await transporter.sendMail(mailOptions);
+                    console.log('Email enviado exitosamente:', result.messageId);
+                    return { success: true, messageId: result.messageId };
+                } catch (error) {
+                    console.error('Error al enviar email:', error);
+                    return { success: false, error: error.message };
+                }
+            };
             
             // Actualizar estado a "pendiente" y fecha de envío
-            db.serialize(() => {
+            db.serialize(async () => {
+                // Intentar enviar email
+                const emailResult = await enviarEmail(cotizacion, subject, html, text);
+                
+                if (!emailResult.success && !emailResult.simulated) {
+                    return res.status(500).json({ 
+                        error: 'Error al enviar email: ' + emailResult.error 
+                    });
+                }
+                
                 db.run('BEGIN TRANSACTION');
                 
                 db.run(`
@@ -2461,10 +2664,14 @@ app.post('/api/cotizaciones/:id/enviar', requireAuth, (req, res) => {
                     }
                     
                     // Registrar en historial
+                    const comentario = emailResult.simulated ? 
+                        'Cotización enviada (email simulado - configurar SMTP)' : 
+                        'Cotización enviada por email al cliente';
+                        
                     db.run(`
                         INSERT INTO cotizacion_historial (cotizacion_id, estado_anterior, estado_nuevo, comentario, usuario_id)
                         VALUES (?, ?, ?, ?, ?)
-                    `, [cotizacionId, cotizacion.estado, 'pendiente', 'Cotización enviada por email al cliente', req.user.id], (err) => {
+                    `, [cotizacionId, cotizacion.estado, 'pendiente', comentario, req.user.id], (err) => {
                         if (err) {
                             console.error('Error al registrar historial:', err);
                             db.run('ROLLBACK', () => {
@@ -2476,21 +2683,29 @@ app.post('/api/cotizaciones/:id/enviar', requireAuth, (req, res) => {
                         
                         db.run('COMMIT', (err) => {
                             if (err) {
-                                console.error('Error en commit:', err);
+                                console.error('Error al confirmar transacción:', err);
                                 db.close();
                                 res.status(500).json({ error: 'Error interno del servidor' });
                                 return;
                             }
                             
-                            // Simular envío exitoso (en producción aquí enviarías el email real)
-                            console.log('📧 Email simulado enviado a:', cotizacion.cliente_email);
-                            console.log('Contenido del email:', emailContent.substring(0, 200) + '...');
+                            const mensaje = emailResult.simulated ? 
+                                'Cotización procesada (email simulado - configurar SMTP para envío real)' :
+                                'Cotización enviada exitosamente al cliente';
+                            
+                            if (emailResult.simulated) {
+                                console.log('📧 Email simulado enviado a:', cotizacion.cliente_email);
+                                console.log('Contenido del email:', text.substring(0, 200) + '...');
+                            } else {
+                                console.log('📧 Email real enviado a:', cotizacion.cliente_email, '- MessageID:', emailResult.messageId);
+                            }
                             
                             db.close();
                             res.json({ 
-                                message: 'Cotización enviada exitosamente',
-                                email_enviado_a: cotizacion.cliente_email,
-                                estado_nuevo: 'pendiente'
+                                message: mensaje,
+                                numero: cotizacion.numero,
+                                cliente_email: cotizacion.cliente_email,
+                                simulated: emailResult.simulated || false
                             });
                         });
                     });
@@ -2507,14 +2722,31 @@ function generarEmailCotizacion(cotizacion) {
         new Date(cotizacion.fecha_expiracion).toLocaleDateString('es-ES') : 'No especificada';
     
     let itemsText = '';
+    let itemsHtml = '';
+    
     if (cotizacion.items && cotizacion.items.length > 0) {
         itemsText = cotizacion.items.map(item => {
             const subtotal = item.cantidad * item.precio_unitario * (1 - item.descuento_porcentaje/100);
             return `- ${item.nombre} x${item.cantidad} - $${subtotal.toLocaleString('es-CO')}`;
         }).join('\n');
+        
+        itemsHtml = cotizacion.items.map(item => {
+            const subtotal = item.cantidad * item.precio_unitario * (1 - item.descuento_porcentaje/100);
+            return `
+                <tr style="border-bottom: 1px solid #eee;">
+                    <td style="padding: 10px; border: 1px solid #ddd;">${item.nombre}</td>
+                    <td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${item.cantidad}</td>
+                    <td style="padding: 10px; text-align: right; border: 1px solid #ddd;">$${item.precio_unitario.toLocaleString('es-CO')}</td>
+                    <td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${item.descuento_porcentaje}%</td>
+                    <td style="padding: 10px; text-align: right; border: 1px solid #ddd; font-weight: bold;">$${subtotal.toLocaleString('es-CO')}</td>
+                </tr>
+            `;
+        }).join('');
     }
     
-    return `
+    const subject = `Cotización ${cotizacion.numero} - ${cotizacion.titulo}`;
+    
+    const text = `
 Estimado/a ${cotizacion.cliente_nombre},
 
 Esperamos que se encuentre bien. Nos complace enviarle la cotización solicitada:
@@ -2533,7 +2765,6 @@ Esperamos que se encuentre bien. Nos complace enviarle la cotización solicitada
 ${itemsText}
 
 ${cotizacion.descripcion ? `📝 DESCRIPCIÓN:\n${cotizacion.descripcion}\n\n` : ''}
-
 ${cotizacion.terminos_condiciones ? `📋 TÉRMINOS Y CONDICIONES:\n${cotizacion.terminos_condiciones}\n\n` : ''}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -2549,6 +2780,116 @@ Para cualquier consulta o para proceder con el pedido, no dude en contactarnos:
 Saludos cordiales,
 El equipo de Llantera & Servicios Automotrices
     `;
+    
+    const html = `
+    <!DOCTYPE html>
+    <html lang="es">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Cotización ${cotizacion.numero}</title>
+        <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; padding: 20px; background-color: #f5f5f5; }
+            .header { background: linear-gradient(135deg, #2c5aa0 0%, #1e3d6f 100%); color: white; padding: 30px; border-radius: 10px; text-align: center; margin-bottom: 20px; }
+            .content { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 20px; }
+            .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 20px 0; }
+            .info-item { padding: 15px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #2c5aa0; }
+            .info-label { font-weight: bold; color: #2c5aa0; font-size: 0.9em; }
+            .table { width: 100%; border-collapse: collapse; margin: 20px 0; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+            .table th { background: #2c5aa0; color: white; padding: 15px; text-align: left; font-weight: bold; }
+            .table td { padding: 12px 15px; border-bottom: 1px solid #eee; }
+            .table tr:hover { background-color: #f8f9fa; }
+            .total { background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); padding: 20px; border-radius: 8px; text-align: center; font-size: 1.5em; font-weight: bold; color: #1565c0; margin: 20px 0; }
+            .footer { background: #2c5aa0; color: white; padding: 30px; text-align: center; border-radius: 10px; }
+            .terms { background: #fff8e1; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #ffb300; }
+            .contact-info { display: flex; justify-content: space-around; margin: 20px 0; }
+            .contact-item { text-align: center; }
+        </style>
+    </head>
+    <body>
+        <div class="header">
+            <h1>🚗 Llantera & Servicios Automotrices</h1>
+            <h2>Cotización ${cotizacion.numero}</h2>
+            <p>Fecha: ${fechaCreacion}</p>
+        </div>
+        
+        <div class="content">
+            <p><strong>Estimado/a ${cotizacion.cliente_nombre},</strong></p>
+            <p>Esperamos que se encuentre bien. Nos complace enviarle la cotización solicitada para <strong>${cotizacion.titulo}</strong>.</p>
+            
+            <div class="info-grid">
+                <div class="info-item">
+                    <div class="info-label">📋 Título del Proyecto</div>
+                    <div>${cotizacion.titulo}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">⏰ Válida hasta</div>
+                    <div>${fechaExpiracion}</div>
+                </div>
+            </div>
+            
+            ${cotizacion.descripcion ? `
+            <div style="background: #f0f8ff; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #2196f3;">
+                <h4 style="margin: 0 0 10px 0; color: #1976d2;">📝 Descripción del Proyecto:</h4>
+                <p style="margin: 0;">${cotizacion.descripcion}</p>
+            </div>
+            ` : ''}
+            
+            <h3 style="color: #2c5aa0; margin: 30px 0 20px 0;">📦 Productos/Servicios Incluidos:</h3>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Producto/Servicio</th>
+                        <th style="text-align: center;">Cantidad</th>
+                        <th style="text-align: right;">Precio Unit.</th>
+                        <th style="text-align: center;">Descuento</th>
+                        <th style="text-align: right;">Subtotal</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${itemsHtml}
+                </tbody>
+            </table>
+            
+            <div class="total">
+                💰 Total: $${(cotizacion.total || 0).toLocaleString('es-CO')}
+            </div>
+            
+            ${cotizacion.terminos_condiciones ? `
+            <div class="terms">
+                <h4 style="margin: 0 0 15px 0; color: #f57c00;">📋 Términos y Condiciones:</h4>
+                <p style="margin: 0; line-height: 1.6;">${cotizacion.terminos_condiciones}</p>
+            </div>
+            ` : ''}
+            
+            <p style="margin-top: 30px;">Para proceder con el pedido o si tiene alguna consulta, no dude en contactarnos. Estaremos encantados de atenderle.</p>
+            
+            <p><strong>¡Gracias por confiar en nosotros!</strong></p>
+        </div>
+        
+        <div class="footer">
+            <h3 style="margin: 0 0 20px 0;">Llantera & Servicios Automotrices</h3>
+            <div class="contact-info">
+                <div class="contact-item">
+                    <div>📞</div>
+                    <div>(555) 123-4567</div>
+                </div>
+                <div class="contact-item">
+                    <div>📧</div>
+                    <div>info@llantera.com</div>
+                </div>
+                <div class="contact-item">
+                    <div>🌐</div>
+                    <div>www.llantera.com</div>
+                </div>
+            </div>
+            <p style="margin: 20px 0 0 0; font-size: 0.9em; opacity: 0.9;">Su especialista en llantas y servicios automotrices de confianza</p>
+        </div>
+    </body>
+    </html>
+    `;
+    
+    return { subject, html, text };
 }
 
 // Función auxiliar para recalcular totales de cotización

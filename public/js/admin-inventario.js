@@ -954,9 +954,55 @@ function irAPagina(pagina) {
     actualizarPaginacion();
 }
 
-// Exportar inventario
-function exportarInventario() {
-    AppUtils.mostrarMensaje('Funcionalidad de exportación próximamente', 'info');
+// Exportar inventario a Excel
+async function exportarInventario() {
+    try {
+        AppUtils.mostrarMensaje('Preparando exportación a Excel...', 'info');
+        
+        const token = localStorage.getItem('empleadoToken');
+        const response = await fetch('/api/inventario/exportar-excel', {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        if (response.ok) {
+            // Obtener el blob del archivo Excel
+            const blob = await response.blob();
+            
+            // Crear URL temporal para descarga
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            
+            // Obtener nombre del archivo del header o usar nombre por defecto
+            const contentDisposition = response.headers.get('Content-Disposition');
+            let filename = 'inventario-export.xlsx';
+            
+            if (contentDisposition) {
+                const filenameMatch = contentDisposition.match(/filename="(.+)"/);
+                if (filenameMatch) {
+                    filename = filenameMatch[1];
+                }
+            }
+            
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+            
+            AppUtils.mostrarMensaje(`✅ Inventario exportado exitosamente como ${filename}`, 'success');
+            
+        } else {
+            const errorData = await response.json().catch(() => ({ error: 'Error desconocido' }));
+            AppUtils.mostrarMensaje(`Error al exportar: ${errorData.error}`, 'error');
+        }
+        
+    } catch (error) {
+        console.error('Error en exportación:', error);
+        AppUtils.mostrarMensaje('Error de conexión al exportar inventario', 'error');
+    }
 }
 
 // Logout específico para inventario (considera modo demo)
